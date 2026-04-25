@@ -14,26 +14,22 @@ const isUnlocked = cookiePassport === 'unlocked_2026';
 const products = await getCollection('products') || [];
 const productsWithImages = products.filter(p => p.data.image && p.data.image.length > 5);
 
-// Vault Data (Custodians)
+// Vault Data (The Custodians)
 const vaultCategories = [...new Set(productsWithImages.map(p => p.data.category?.[0] || 'ESSENTIAL'))].sort();
 const vaultMap = vaultCategories.map(cat => ({
 	name: cat,
 	nodes: productsWithImages.filter(p => p.data.category?.[0] === cat)
 }));
-
-// Helper for dynamic signal meter
-const getSignalData = (score: number, status: string) => {
-	const activeBars = score >= 7 ? 3 : (score >= 4 ? 2 : 1);
-	const color = status === 'Live' ? '#00ff88' : '#ff4444';
-	return { activeBars, color };
-};
 ---
 
-<MainLayout title="SelectStream | Spatial Laboratory">
+<MainLayout title="SelectStream | Tactical Vaults">
 	<div id="unlocked-header" style={isUnlocked ? "display: block" : "display: none"}>
 		<section class="lab-dashboard">
-			<h1>SOVEREIGN_CANVAS_v1.8</h1>
-			<p class="admin-subtitle">LABORATORY ACTIVE • SPATIAL_CURATION_MODE</p>
+			<div class="vitals-minimal">
+				<span>v1.8.6_STABLE</span>
+				<span>{productsWithImages.length} NODES_ONLINE</span>
+			</div>
+			<h1>TACTICAL_VAULT_ARCHIVE</h1>
 		</section>
 	</div>
 	
@@ -42,22 +38,22 @@ const getSignalData = (score: number, status: string) => {
 	</div>
 
 	<div class="spatial-canvas" id="canvas">
-		{/* THE DOCK: Adding Vaults */}
+		{/* THE DOCK */}
 		<div class="vault-dock">
-			<span class="dock-label">VAULT_DOCK</span>
+			<span class="dock-label">INITIALIZE_CONTAINER</span>
 			<div class="dock-controls">
 				{vaultMap.map((v, i) => (
 					<button class="dock-item add-vault-trigger" data-vault={JSON.stringify(v)}>
-						{String(i + 1).padStart(2, '0')}_{v.name.toUpperCase()}
+						BOX_{String(i + 1).padStart(2, '0')}
 					</button>
 				))}
 			</div>
 		</div>
 
-		{/* THE WORKSPACE: Elements appear here */}
+		{/* THE WORKSPACE */}
 		<div class="workspace-area" id="workspace">
 			<div class="canvas-empty-state" id="empty-state">
-				<p>CANVAS_NULL. ENGAGE VAULT FROM DOCK TO INITIALIZE CURATION.</p>
+				<p>SYSTEM_IDLE. ENGAGE DOCK TO DEPLOY VAULT BOXES.</p>
 			</div>
 		</div>
 	</div>
@@ -69,11 +65,8 @@ const getSignalData = (score: number, status: string) => {
 		const emptyState = document.getElementById('empty-state');
 		const haptic = (ms = 10) => { if ('vibrate' in navigator) navigator.vibrate(ms); };
 
-		// Template for a Spun-up Node Card
 		const createNodeHTML = (product: any, isStacked = false) => {
 			const signal = (product.trendScore >= 7 ? 3 : (product.trendScore >= 4 ? 2 : 1));
-			const barColor = '#00ff88';
-
 			return `
 				<div class="node-card ${isStacked ? 'stacked-node' : 'active-node'}">
 					<div class="card-flipper">
@@ -89,20 +82,23 @@ const getSignalData = (score: number, status: string) => {
 								<div class="analytics-footer">
 									<div class="signal-group">
 										<div class="signal-meter">
-											${[1,2,3].map(b => `<div class="signal-bar ${b <= signal ? 'active' : ''}" style="${b <= signal ? `--bar-color: ${barColor}` : ''}"></div>`).join('')}
+											${[1,2,3].map(b => `<div class="signal-bar ${b <= signal ? 'active' : ''}"></div>`).join('')}
 										</div>
-										<span class="score-value">${product.trendScore.toFixed(1)}</span>
+										<span class="score-value">${product.trendScore.toFixed(1)} SIGNAL</span>
 									</div>
 									<div class="action-group">
-										<button class="card-action flip-trigger" title="Technical Specs">
-											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+										<button class="card-action flip-trigger" title="Specs">
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
 										</button>
-										<button class="card-action stack-trigger" title="Engage Signal / Magnet" data-node='${JSON.stringify(product)}'>
-											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<button class="card-action stack-trigger" title="Engage Magnet" data-node='${JSON.stringify(product)}'>
+											<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 												<path d="M5 12V3m0 9l-2-2m2 2l2-2"/>
 												<path d="M19 12V3m0 9l-2-2m2 2l2-2"/>
 												<path d="M12 21V10m0 11l-3-3m3 3l3-3"/>
 											</svg>
+										</button>
+										<button class="card-action add-btn" data-product='${JSON.stringify(product)}'>
+											<svg width="14" height="14" viewBox="0 0 12 12"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
 										</button>
 										${isStacked ? `<button class="card-action remove-node">&times;</button>` : ''}
 									</div>
@@ -126,68 +122,54 @@ const getSignalData = (score: number, status: string) => {
 			`;
 		};
 
-		// 1. Adding a Vault to Canvas
 		document.querySelectorAll('.add-vault-trigger').forEach(btn => {
 			btn.addEventListener('click', () => {
 				haptic(15);
 				if (emptyState) emptyState.style.display = 'none';
 				const vaultData = JSON.parse(btn.getAttribute('data-vault') || '{}');
 				
-				// Create Vault Portal
 				const vaultEl = document.createElement('div');
-				vaultEl.className = 'vault-portal';
+				vaultEl.className = 'vault-box';
 				vaultEl.innerHTML = `
-					<div class="vault-inner">
-						<span class="vault-id">VAULT_${vaultData.name.toUpperCase()}</span>
-						<div class="vault-info-overlay">
-							<p>CUSTODIAN OF ${vaultData.nodes.length} NODES</p>
-							<span class="sub">CLICK TO SPIN INTERFACE</span>
+					<div class="box-face box-top"></div>
+					<div class="box-content">
+						<span class="box-serial">S/N_${vaultData.name.toUpperCase().substring(0,4)}</span>
+						<h2 class="box-title">${vaultData.name.toUpperCase()}</h2>
+						<div class="box-stats">
+							<span>NODES: ${vaultData.nodes.length}</span>
+							<span class="pulse-dot"></span>
 						</div>
 					</div>
-					<button class="close-vault">&times;</button>
+					<button class="close-box">&times;</button>
 				`;
 
-				// CLICK: Spin up the Node Card
 				vaultEl.addEventListener('click', (e) => {
-					if ((e.target as HTMLElement).classList.contains('close-vault')) return;
+					if ((e.target as HTMLElement).classList.contains('close-box')) return;
 					haptic(20);
-					
-					// Remove existing active node for this vault if any
-					vaultEl.querySelector('.active-node')?.remove();
-					
-					const firstProduct = vaultData.nodes[0].data;
-					const nodeCard = document.createElement('div');
-					nodeCard.className = 'node-spin-container';
-					nodeCard.innerHTML = createNodeHTML({
-						...firstProduct,
-						image: firstProduct.image,
-						trendScore: firstProduct.trendScore,
-						painPoint: firstProduct.painPoint,
-						notes: firstProduct.notes,
-						buyLink: firstProduct.buyLink,
-						slug: firstProduct.slug,
-						id: vaultData.nodes[0].id
-					});
+					if (vaultEl.querySelector('.node-spin-container')) return;
 
-					// Logic to cycle through items
-					let currentIndex = 0;
-					nodeCard.addEventListener('wheel', (e) => {
+					const nodeSpin = document.createElement('div');
+					nodeSpin.className = 'node-spin-container';
+					let idx = 0;
+					
+					const render = (p: any) => {
+						nodeSpin.innerHTML = createNodeHTML(p);
+						attachNodeListeners(nodeSpin);
+					};
+
+					render(vaultData.nodes[idx].data);
+
+					nodeSpin.addEventListener('wheel', (e) => {
 						e.preventDefault();
-						currentIndex = (e.deltaY > 0) ? (currentIndex + 1) % vaultData.nodes.length : (currentIndex - 1 + vaultData.nodes.length) % vaultData.nodes.length;
-						const p = vaultData.nodes[currentIndex].data;
-						nodeCard.innerHTML = createNodeHTML({
-							...p, id: vaultData.nodes[currentIndex].id
-						});
-						attachNodeListeners(nodeCard);
+						idx = (e.deltaY > 0) ? (idx + 1) % vaultData.nodes.length : (idx - 1 + vaultData.nodes.length) % vaultData.nodes.length;
+						render(vaultData.nodes[idx].data);
 					}, { passive: false });
 
-					vaultEl.appendChild(nodeCard);
-					attachNodeListeners(nodeCard);
+					vaultEl.appendChild(nodeSpin);
 				});
 
 				workspace?.appendChild(vaultEl);
-				
-				vaultEl.querySelector('.close-vault')?.addEventListener('click', () => {
+				vaultEl.querySelector('.close-box')?.addEventListener('click', () => {
 					vaultEl.remove();
 					if (workspace?.children.length === 1) if (emptyState) emptyState.style.display = 'block';
 				});
@@ -195,34 +177,20 @@ const getSignalData = (score: number, status: string) => {
 		});
 
 		const attachNodeListeners = (container: HTMLElement) => {
-			// Flip
-			container.querySelectorAll('.flip-trigger').forEach(b => {
-				b.addEventListener('click', (e) => {
-					e.stopPropagation();
-					container.querySelector('.node-card')?.classList.toggle('is-flipped');
-				});
-			});
+			container.querySelectorAll('.flip-trigger').forEach(b => b.addEventListener('click', (e) => {
+				e.stopPropagation(); container.querySelector('.node-card')?.classList.toggle('is-flipped');
+			}));
 
-			// Stack (Magnet/Antenna)
-			container.querySelectorAll('.stack-trigger').forEach(b => {
-				b.addEventListener('click', (e) => {
-					e.stopPropagation();
-					haptic(30);
-					const nodeData = JSON.parse(b.getAttribute('data-node') || '{}');
-					
-					// Create persistent card on canvas
-					const stackedCard = document.createElement('div');
-					stackedCard.className = 'stacked-card-anchor';
-					stackedCard.innerHTML = createNodeHTML(nodeData, true);
-					
-					workspace?.appendChild(stackedCard);
-					
-					stackedCard.querySelector('.remove-node')?.addEventListener('click', () => stackedCard.remove());
-					stackedCard.querySelector('.flip-trigger')?.addEventListener('click', () => {
-						stackedCard.querySelector('.node-card')?.classList.toggle('is-flipped');
-					});
-				});
-			});
+			container.querySelectorAll('.stack-trigger').forEach(b => b.addEventListener('click', (e) => {
+				e.stopPropagation(); haptic(30);
+				const nodeData = JSON.parse(b.getAttribute('data-node') || '{}');
+				const stacked = document.createElement('div');
+				stacked.className = 'stacked-card-anchor';
+				stacked.innerHTML = createNodeHTML(nodeData, true);
+				workspace?.appendChild(stacked);
+				stacked.querySelector('.remove-node')?.addEventListener('click', () => stacked.remove());
+				stacked.querySelector('.flip-trigger')?.addEventListener('click', () => stacked.querySelector('.node-card')?.classList.toggle('is-flipped'));
+			}));
 		};
 	};
 
@@ -234,158 +202,122 @@ const getSignalData = (score: number, status: string) => {
 	.spatial-canvas {
 		position: relative;
 		width: 100%;
-		height: 80vh;
-		background: radial-gradient(circle at center, #050505 0%, #000 100%);
+		height: 85vh;
+		background: #000;
+		background-image: 
+			radial-gradient(circle at 50% 50%, #050505 0%, #000 100%),
+			linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+			linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+		background-size: 100% 100%, 40px 40px, 40px 40px;
 		border: 1px solid #111;
 		border-radius: 4px;
 		overflow: hidden;
 		margin-top: 2rem;
 	}
 
-	/* THE DOCK */
 	.vault-dock {
 		position: absolute;
 		bottom: 2rem;
 		left: 50%;
 		transform: translateX(-50%);
-		background: rgba(8,8,8,0.8);
-		backdrop-filter: blur(20px);
+		background: #080808;
 		border: 1px solid #222;
 		padding: 1rem 2rem;
-		border-radius: 100px;
+		border-radius: 4px;
 		display: flex;
 		align-items: center;
 		gap: 2rem;
 		z-index: 1000;
+		box-shadow: 0 20px 50px rgba(0,0,0,1);
 	}
 
-	.dock-label { font-family: var(--family-mono); font-size: 0.45rem; color: #444; letter-spacing: 0.2rem; }
-	.dock-controls { display: flex; gap: 1rem; }
-	
-	.dock-item {
-		background: none;
-		border: 1px solid #222;
-		color: #888;
-		padding: 0.5rem 1rem;
-		border-radius: 100px;
-		font-family: var(--family-mono);
-		font-size: 0.55rem;
-		cursor: pointer;
-		transition: all 0.3s ease;
-	}
-	.dock-item:hover { color: #fff; border-color: #444; background: #111; }
+	.dock-label { font-family: var(--family-mono); font-size: 0.5rem; color: #333; letter-spacing: 0.2rem; }
+	.dock-item { background: #000; border: 1px solid #222; color: #666; padding: 0.6rem 1.2rem; font-family: var(--family-mono); font-size: 0.6rem; cursor: pointer; transition: all 0.3s ease; }
+	.dock-item:hover { color: #00ff88; border-color: #00ff88; }
 
-	/* WORKSPACE */
-	.workspace-area {
-		width: 100%;
-		height: 100%;
-		padding: 4rem;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6rem;
-		align-items: flex-start;
-		justify-content: center;
-	}
+	.workspace-area { width: 100%; height: 100%; padding: 6rem; display: flex; flex-wrap: wrap; gap: 8rem; align-items: flex-start; justify-content: center; }
+	.canvas-empty-state { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #111; font-family: var(--family-mono); font-size: 0.7rem; letter-spacing: 0.6rem; text-align: center; }
 
-	.canvas-empty-state {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		color: #111;
-		font-family: var(--family-mono);
-		font-size: 0.6rem;
-		letter-spacing: 0.5rem;
-		text-align: center;
-		width: 80%;
-	}
-
-	/* VAULT PORTAL */
-	.vault-portal {
+	/* VAULT BOX */
+	.vault-box {
 		position: relative;
-		width: 220px;
-		height: 320px;
+		width: 260px;
+		height: 380px;
 		background: #050505;
-		border: 2px dashed #111;
-		border-radius: 8px;
+		border: 1px solid #1a1a1a;
+		border-top: 4px solid #222;
 		cursor: pointer;
-		transition: all 0.4s ease;
+		transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+		box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 	}
-	.vault-portal:hover { border-color: #222; background: #080808; transform: translateY(-5px); }
+	.vault-box:hover { border-color: #333; transform: translateY(-10px) rotateX(5deg); box-shadow: 0 40px 80px rgba(0,0,0,0.9); }
 
-	.vault-inner {
-		padding: 2rem;
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-	}
-	.vault-id { font-family: var(--family-mono); font-size: 0.5rem; color: #222; letter-spacing: 0.1rem; }
-	.vault-info-overlay { opacity: 0.3; transition: opacity 0.3s ease; }
-	.vault-portal:hover .vault-info-overlay { opacity: 1; }
-	.vault-info-overlay p { font-size: 0.6rem; color: #444; margin-bottom: 0.5rem; }
-	.vault-info-overlay .sub { font-size: 0.45rem; color: #00ff88; font-family: var(--family-mono); }
+	.box-face { position: absolute; top: -12px; left: -1px; right: -1px; height: 12px; background: #111; transform: skewX(-45deg); transform-origin: bottom; }
+	.box-content { padding: 3rem 2rem; height: 100%; display: flex; flex-direction: column; }
+	.box-serial { font-family: var(--family-mono); font-size: 0.5rem; color: #222; margin-bottom: 1rem; }
+	.box-title { font-size: 1.2rem; color: #fff; font-weight: 900; letter-spacing: -0.05rem; margin-bottom: auto; }
+	.box-stats { display: flex; justify-content: space-between; align-items: center; font-family: var(--family-mono); font-size: 0.55rem; color: #444; }
+	.pulse-dot { width: 6px; height: 6px; background: #00ff88; border-radius: 50%; box-shadow: 0 0 10px #00ff88; animation: blink 2s infinite; }
+	@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 
-	.close-vault { position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; background: #ff4444; color: #fff; border: none; border-radius: 50%; cursor: pointer; display: none; }
-	.vault-portal:hover .close-vault { display: block; }
+	.close-box { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: #333; cursor: pointer; font-size: 1.2rem; }
+	.close-box:hover { color: #ff4444; }
 
-	/* NODE SPIN (The Interface) */
+	/* NODE SPIN (The Large Card) */
 	.node-spin-container {
 		position: absolute;
-		top: -20px;
-		left: 40px;
-		width: 280px;
+		top: -30px;
+		left: 60px;
+		width: 360px; /* Increased width */
 		z-index: 100;
-		animation: spin-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+		animation: spin-up 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	@keyframes spin-up {
-		from { opacity: 0; transform: translateY(20px) rotateY(-20deg); }
-		to { opacity: 1; transform: translateY(0) rotateY(0); }
-	}
+	@keyframes spin-up { from { opacity: 0; transform: translate(-20px, 20px) rotateY(-10deg); } to { opacity: 1; transform: translate(0); } }
 
-	.stacked-card-anchor {
-		width: 280px;
-		position: relative;
-	}
+	.stacked-card-anchor { width: 360px; position: relative; }
 
-	/* CARD ARCHITECTURE */
-	.node-card { width: 100%; min-height: 400px; perspective: 1000px; }
+	/* CARD FIDELITY */
+	.node-card { width: 100%; min-height: 480px; perspective: 2000px; }
 	.card-flipper { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transform-style: preserve-3d; }
 	.node-card.is-flipped .card-flipper { transform: rotateY(180deg); }
-	.card-face { position: absolute; inset: 0; backface-visibility: hidden; background: #080808; border: 1px solid #222; border-radius: 4px; box-shadow: 0 30px 60px rgba(0,0,0,0.8); display: flex; flex-direction: column; }
-	.card-back { transform: rotateY(180deg); background: #030303 !important; padding: 1.5rem; }
 
-	.visual-viewport { height: 180px; overflow: hidden; background: #000; border-radius: 4px 4px 0 0; }
-	img { width: 100%; height: 100%; object-fit: contain; opacity: 0.8; }
-	.card-meta-container { padding: 1.2rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-	h3 { font-size: 0.9rem; color: #fff; margin: 0.4rem 0; }
-	.diagnostic-tag { font-family: var(--family-mono); font-size: 0.45rem; color: #ff4444; font-weight: 900; }
+	.card-face { position: absolute; inset: 0; backface-visibility: hidden; background: #0a0a0a; border: 1px solid #333; border-radius: 2px; box-shadow: 0 50px 100px rgba(0,0,0,0.9); display: flex; flex-direction: column; overflow: hidden; }
+	.card-back { transform: rotateY(180deg); background: #030303 !important; padding: 2rem; }
 
-	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #111; padding-top: 1rem; }
-	.signal-meter { display: flex; gap: 2px; height: 8px; align-items: flex-end; }
-	.signal-bar { width: 2px; background: #111; }
-	.signal-bar.active { background: #00ff88; box-shadow: 0 0 5px #00ff88; }
-	.score-value { font-size: 0.5rem; color: #444; font-family: var(--family-mono); }
+	.visual-viewport { height: 240px; background: #000; display: flex; align-items: center; justify-content: center; }
+	img { width: 100%; height: 100%; object-fit: contain; }
 
-	.action-group { display: flex; gap: 0.4rem; }
-	.card-action { width: 26px; height: 26px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
-	.card-action:hover { background: #fff; color: #000; }
-	.stack-trigger { border-radius: 4px; padding: 0 0.5rem; width: auto; font-size: 0.4rem; font-family: var(--family-mono); font-weight: 900; }
+	.card-meta-container { padding: 2rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+	h3 { font-size: 1.4rem; color: #fff; font-weight: 900; line-height: 1.1; margin: 0.5rem 0; letter-spacing: -0.02rem; }
+	.diagnostic-tag { font-family: var(--family-mono); font-size: 0.55rem; color: #ff4444; font-weight: 900; letter-spacing: 0.15rem; }
 
-	/* BACK STYLES */
-	.blueprint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #111; padding-bottom: 0.5rem; }
-	.bp-label { font-family: var(--family-mono); font-size: 0.45rem; color: #333; }
-	.spec-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #111; }
-	.spec-row .label { font-size: 0.4rem; color: #222; }
-	.spec-row .val { font-size: 0.4rem; color: #00ff88; font-family: var(--family-mono); }
-	.blueprint-graph { flex: 1; margin: 1rem 0; background: #050505; border: 1px solid #111; position: relative; padding: 0.8rem; overflow: hidden; }
-	.grid-mesh { position: absolute; inset: 0; background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px); background-size: 8px 8px; opacity: 0.3; }
-	.blueprint-graph p { font-size: 0.5rem; color: #666; line-height: 1.4; position: relative; z-index: 2; font-family: var(--family-mono); }
-	.buy-link-back { display: block; background: #fff; color: #000; text-align: center; padding: 0.8rem; font-size: 0.55rem; font-weight: 900; font-family: var(--family-mono); text-decoration: none; border-radius: 2px; }
+	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1a1a1a; padding-top: 1.5rem; }
+	.signal-meter { display: flex; gap: 4px; height: 12px; align-items: flex-end; }
+	.signal-bar { width: 4px; background: #111; border-radius: 1px; }
+	.signal-bar.active { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
+	.score-value { font-size: 0.6rem; color: #666; font-family: var(--family-mono); font-weight: 900; }
+
+	.action-group { display: flex; gap: 0.8rem; }
+	.card-action { width: 36px; height: 36px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+	.card-action:hover { background: #fff; color: #000; border-color: #fff; transform: translateY(-2px); }
+	.stack-trigger { color: #00ff88; border-color: #00ff88; }
+	.remove-node { background: #ff4444; border-color: #ff4444; }
+
+	/* BLUEPRINT BACK */
+	.blueprint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+	.bp-label { font-family: var(--family-mono); font-size: 0.6rem; color: #444; letter-spacing: 0.3rem; }
+	.spec-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid #111; }
+	.spec-row .label { font-size: 0.5rem; color: #333; }
+	.spec-row .val { font-size: 0.5rem; color: #00ff88; font-family: var(--family-mono); }
+	.blueprint-graph { flex: 1; margin: 2rem 0; background: #050505; border: 1px solid #111; position: relative; padding: 1.5rem; overflow: hidden; }
+	.grid-mesh { position: absolute; inset: 0; background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px); background-size: 10px 10px; opacity: 0.4; }
+	.blueprint-graph p { font-size: 0.65rem; color: #888; line-height: 1.6; position: relative; z-index: 2; font-family: var(--family-mono); }
+	.buy-link-back { display: block; background: #fff; color: #000; text-align: center; padding: 1.2rem; font-size: 0.7rem; font-weight: 900; font-family: var(--family-mono); text-decoration: none; border-radius: 2px; }
 
 	/* LAB DASHBOARD */
 	.lab-dashboard { padding: 8rem 0 4rem 0; text-align: center; border-bottom: 1px solid #111; }
-	.admin-subtitle { font-size: 0.6rem; letter-spacing: 0.3rem; color: #444; font-weight: 900; }
-	h1 { font-size: 3rem; letter-spacing: -0.1rem; color: #fff; }
+	.vitals-minimal { display: flex; justify-content: center; gap: 4rem; margin-bottom: 2rem; font-family: var(--family-mono); font-size: 0.45rem; color: #333; letter-spacing: 0.2rem; }
+	.admin-subtitle { font-size: 0.6rem; letter-spacing: 0.4rem; color: #444; font-weight: 900; margin-top: 1rem; }
+	h1 { font-size: 4rem; letter-spacing: -0.1rem; color: #fff; font-weight: 900; }
 </style>
