@@ -1,0 +1,4 @@
+.gemini/tmp/
+public/assets/stream/logs.json
+uploader.sh
+test-notion.js

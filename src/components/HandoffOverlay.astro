@@ -1,0 +1,236 @@
+---
+---
+<div id="alpha-gate" class="gate-overlay" style="display: none;">
+  <div class="gate-content">
+    <button id="close-gate" class="close-btn">&times;</button>
+    <div class="gate-header">
+      <span class="lock-icon">🔒</span>
+      <h2>ACCESS RESTRICTED</h2>
+      <p>The Full Stream is currently reserved for verified Alpha members and brand partners.</p>
+    </div>
+    
+    <div class="gate-actions">
+      <p class="cta-text">Enter the stream by anchoring your email below.</p>
+      
+      <div class="overlay-capture">
+        <form id="overlay-subscribe-form" autocomplete="off">
+          <input 
+            type="email" 
+            id="overlay-email-input" 
+            placeholder="ENTER EMAIL FOR ACCESS" 
+            required 
+            autocomplete="one-time-code"
+          />
+          <button type="submit" id="overlay-submit-btn">UNLOCK STREAM</button>
+        </form>
+        <p id="overlay-msg" class="overlay-msg"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const gate = document.getElementById('alpha-gate');
+  const closeBtn = document.getElementById('close-gate');
+  const form = document.getElementById('overlay-subscribe-form') as HTMLFormElement;
+  const msg = document.getElementById('overlay-msg');
+  const btn = document.getElementById('overlay-submit-btn') as HTMLButtonElement;
+
+  // Global trigger for the gate
+  window.addEventListener('trigger-alpha-gate', () => {
+    if (gate) gate.style.display = 'flex';
+    document.body.style.overflow = 'hidden'; // Lock scroll
+    
+    // Instant Focus for streamlined navigation
+    setTimeout(() => {
+      const input = document.getElementById('overlay-email-input');
+      if (input) input.focus();
+    }, 100);
+  });
+
+  const closeGate = () => {
+    if (gate) gate.style.display = 'none';
+    document.body.style.overflow = ''; // Unlock scroll
+  };
+
+  closeBtn?.addEventListener('click', closeGate);
+
+  // Close on backdrop click
+  gate?.addEventListener('click', (e) => {
+    if (e.target === gate) closeGate();
+  });
+
+  // Handle Subscription from Overlay
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = (document.getElementById('overlay-email-input') as HTMLInputElement).value;
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "ANCHORING...";
+    }
+
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      if (response.ok) {
+        if (msg) msg.textContent = "ACCESS GRANTED. REFRESHING ENGINE...";
+        if (msg) msg.style.color = "#00ff88";
+        
+        // Let the cookie take effect and refresh
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        const data = await response.json();
+        throw new Error(data.message || "SYNC FAILED.");
+      }
+    } catch (err: any) {
+      if (msg) msg.textContent = `ERROR: ${err.message.toUpperCase()}`;
+      if (msg) msg.style.color = "#ff4444";
+      form.classList.add('shake');
+      setTimeout(() => form.classList.remove('shake'), 500);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "UNLOCK STREAM";
+      }
+    }
+  });
+</script>
+
+<style>
+  .gate-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(30px);
+    z-index: 20000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+  }
+
+  .gate-content {
+    background: #000;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 5rem 3rem;
+    max-width: 550px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    border-radius: 4px;
+    box-shadow: 0 50px 150px rgba(0,0,0,0.9);
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 2.5rem;
+    right: 2.5rem;
+    background: none;
+    border: none;
+    color: #333;
+    font-size: 2.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1;
+  }
+
+  .close-btn:hover { color: #fff; transform: rotate(90deg); }
+
+  .lock-icon { font-size: 2rem; margin-bottom: 2rem; display: block; opacity: 0.2; filter: grayscale(1); }
+
+  h2 {
+    font-size: 1.6rem;
+    letter-spacing: 0.5rem;
+    margin-bottom: 1.5rem;
+    color: #fff;
+    font-weight: 900;
+  }
+
+  .gate-header p {
+    font-size: 0.85rem;
+    color: #555;
+    max-width: 380px;
+    margin: 0 auto 3rem auto;
+    line-height: 1.6;
+    letter-spacing: 0.02rem;
+  }
+
+  .cta-text {
+    font-size: 0.6rem;
+    letter-spacing: 0.3rem;
+    color: #222;
+    font-weight: 900;
+    margin-bottom: 2.5rem;
+    text-transform: uppercase;
+  }
+
+  .overlay-capture {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  input {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 1.2rem;
+    color: #fff;
+    font-size: 0.7rem;
+    letter-spacing: 0.1rem;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 2px;
+  }
+
+  input:focus { 
+    outline: none; 
+    border-color: rgba(255,255,255,0.2); 
+    background: rgba(255,255,255,0.04);
+  }
+
+  button {
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 1.2rem;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+  }
+
+  button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255,255,255,0.1); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .overlay-msg {
+    font-size: 0.6rem;
+    letter-spacing: 0.1rem;
+    margin-top: 1.5rem;
+    font-weight: 900;
+    min-height: 1em;
+  }
+
+  .shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  }
+
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+  }
+</style>

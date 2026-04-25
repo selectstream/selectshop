@@ -1,0 +1,228 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import SetupSidebar from '../components/SetupSidebar.astro';
+import HandoffOverlay from '../components/HandoffOverlay.astro';
+
+const { 
+	title = "SelectStream Shop",
+	description = "Curated high-performance tools for the modern creator.",
+	image = "/assets/app-icon.webp",
+	price,
+	currency = "USD",
+	availability = "instock"
+} = Astro.props;
+
+const PINTEREST_VERIFY = import.meta.env.PINTEREST_VERIFY;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="shortcut icon" href="/favicon.svg" />
+		<link rel="canonical" href={canonicalURL} />
+		<title>{title}</title>
+
+		<!-- Primary Meta Tags -->
+		<meta name="title" content={title} />
+		<meta name="description" content={description} />
+
+		<!-- Open Graph / Pinterest Rich Pins -->
+		<meta property="og:type" content="product" />
+		<meta property="og:url" content={canonicalURL} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content={new URL(image, Astro.site)} />
+
+		{price && (
+			<>
+				<meta property="og:price:amount" content={price} />
+				<meta property="og:price:currency" content={currency} />
+			</>
+		)}
+		<meta property="product:availability" content={availability} />
+
+		<!-- Pinterest Domain Verify -->
+		{PINTEREST_VERIFY && <meta name="p:domain_verify" content={PINTEREST_VERIFY}/>}
+
+		<ClientRouter />
+	</head>
+	<body>
+		<HandoffOverlay />
+		<div class="grain-overlay"></div>
+		<div class="vignette"></div>
+		<div id="cursor"></div>
+		<div class="matte-black-wrapper">
+			<SetupSidebar />
+			<nav>
+				<div class="logo">SELECT<span class="highlight">STREAM</span></div>
+				<div class="nav-links">
+					<a href="/" class="curation-trigger">VAULT</a>
+					<a href="/disclosure">PARTNERSHIP</a>
+				</div>
+			</nav>
+			<main>
+				<slot />
+			</main>
+			<footer>
+				<p>&copy; 2026 SelectStream Shop | THE MATTE BLACK STANDARD</p>
+			</footer>
+		</div>
+
+		<script is:inline>
+			const cursor = document.getElementById('cursor');
+			document.addEventListener('mousemove', (e) => {
+				cursor.style.left = e.clientX + 'px';
+				cursor.style.top = e.clientY + 'px';
+			});
+
+			document.addEventListener('mousedown', () => cursor.style.transform = 'translate(-50%, -50%) scale(0.8)');
+			document.addEventListener('mouseup', () => cursor.style.transform = 'translate(-50%, -50%) scale(1)');
+		</script>
+	</body>
+
+	<style is:global>
+	#cursor {
+		position: fixed;
+		width: 10px;
+		height: 10px;
+		background: #fff;
+		border: 1px solid #00ff88; /* High-Visibility Signal Green */
+		box-shadow: 0 0 10px rgba(0,255,136,0.3);
+		border-radius: 50%;
+		pointer-events: none;
+		z-index: 100000; /* Ensure it stays above EVERYTHING */
+		mix-blend-mode: difference;
+		transition: transform 0.1s ease;
+		transform: translate(-50%, -50%);
+	}
+
+	.nav-links {
+		display: flex;
+		gap: 2rem;
+		font-size: 0.6rem;
+		letter-spacing: 0.2rem;
+		font-weight: 900;
+	}
+
+	.nav-links a {
+		color: #444;
+	}
+
+	.nav-links a:hover {
+		color: #fff;
+	}
+	:root {
+		--bg-color: #030303;
+		--text-color: #a0a0a0;
+		--accent-color: #111111;
+		--highlight-color: #ffffff;
+		--glass-bg: rgba(255, 255, 255, 0.02);
+		--glass-border: rgba(255, 255, 255, 0.05);
+		--glow-color: rgba(255, 255, 255, 0.1);
+	}
+
+	* {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+
+	body {
+		background-color: var(--bg-color);
+		color: var(--text-color);
+		font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+		line-height: 1.6;
+		-webkit-font-smoothing: antialiased;
+		overflow-x: hidden;
+		cursor: none; /* Hidden only on body to allow custom cursor */
+	}
+
+	/* Restore cursor for interactive elements for usability */
+	a, button, [role="button"] {
+		cursor: pointer;
+	}
+
+	.grain-overlay {
+		position: fixed;
+		inset: 0;
+		z-index: 9999;
+		pointer-events: none;
+		opacity: 0.06;
+		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+		filter: contrast(120%) brightness(120%);
+	}
+
+	.vignette {
+		position: fixed;
+		inset: 0;
+		z-index: 9998;
+		pointer-events: none;
+		background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8) 150%);
+	}
+
+	.matte-black-wrapper {
+		position: relative;
+		z-index: 2;
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: 0 2rem;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+	}
+
+	nav {
+		padding: 3rem 0;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		border-bottom: 1px solid var(--accent-color);
+		margin-bottom: 4rem;
+	}
+
+	.logo {
+		font-size: 1.2rem;
+		font-weight: 900;
+		letter-spacing: 0.3rem;
+		color: #fff;
+		text-transform: uppercase;
+	}
+
+	.highlight {
+		color: #333;
+		font-weight: 300;
+	}
+
+	main {
+		flex: 1;
+	}
+
+	footer {
+		padding: 6rem 0 3rem 0;
+		border-top: 1px solid var(--accent-color);
+		text-align: center;
+		font-size: 0.6rem;
+		text-transform: uppercase;
+		letter-spacing: 0.2rem;
+		color: #333;
+	}
+
+	h1, h2, h3 {
+		color: var(--highlight-color);
+		margin-bottom: 1.5rem;
+	}
+
+	a {
+		color: var(--text-color);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	a:hover {
+		color: var(--highlight-color);
+	}
+</style>

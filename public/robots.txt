@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /?key=
+Crawl-delay: 2
+
+# High-Signal Agents Allowed
+User-agent: GPTBot
+Allow: /products/
+Crawl-delay: 5
+
+User-agent: ChatGPT-User
+Allow: /products/
+
+User-agent: Pinterestbot
+Allow: /
+
+Sitemap: https://selectstreamshop.com/sitemap-index.xml

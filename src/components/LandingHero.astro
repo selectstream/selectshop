@@ -1,0 +1,212 @@
+---
+---
+<div class="landing-hero">
+  <div class="launch-signal">
+    <span class="signal-dot"></span>
+    <span class="signal-text">ALPHA ACCESS OPENING SOON</span>
+  </div>
+
+  <div class="hero-content">
+    <h1>THE MATTE BLACK<br/><span class="stroke">STANDARD</span></h1>
+    <p class="hero-subtitle">The autonomous stream of precision-engineered workspace tools. Curated for performance, built for the modern creator.</p>
+    
+    <div class="email-capture" id="alpha-capture-section">
+      <form id="alpha-form" autocomplete="off">
+        <input 
+          type="email" 
+          name="email" 
+          placeholder="ENTER EMAIL FOR ALPHA ACCESS" 
+          required 
+          autocomplete="one-time-code"
+        />
+        <button type="submit">JOIN THE STREAM</button>
+      </form>
+      <div id="form-msg" class="form-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('alpha-form') as HTMLFormElement;
+  const msg = document.getElementById('form-msg');
+  
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = form.querySelector('input');
+    if (!input) return;
+    
+    const email = input.value;
+    const btn = form.querySelector('button');
+
+    // UI Loading State
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "ANCHORING...";
+    }
+
+    try {
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Success: Grant Passport and Reload
+        form.reset();
+        localStorage.setItem('ss_alpha_passport', 'unlocked_2026');
+        
+        if (msg) {
+          msg.innerHTML = "SYSTEM: EMAIL CAPTURED. ACCESS GRANTED.";
+          msg.style.color = "#00ff88";
+        }
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } else {
+        throw new Error(data.message || 'Database connection failed.');
+      }
+    } catch (err: any) {
+      if (msg) {
+        msg.innerHTML = `ERROR: ${err.message.toUpperCase()}`;
+        msg.style.color = "#ff4444";
+      }
+      form.classList.add('shake');
+      setTimeout(() => form.classList.remove('shake'), 500);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "JOIN THE STREAM";
+      }
+    }
+  });
+</script>
+
+<style>
+  .landing-hero {
+    padding: 8rem 0 4rem 0;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.02);
+  }
+
+  .launch-signal {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.8rem 1.5rem;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 100px;
+    margin-bottom: 4rem;
+  }
+
+  .signal-dot {
+    width: 6px;
+    height: 6px;
+    background: #00ff88;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00ff88;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 0.4; }
+    50% { opacity: 1; }
+    100% { opacity: 0.4; }
+  }
+
+  .signal-text {
+    font-size: 0.5rem;
+    font-weight: 900;
+    letter-spacing: 0.2rem;
+    color: #444;
+  }
+
+  h1 {
+    font-size: 5rem;
+    line-height: 0.85;
+    letter-spacing: -0.2rem;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+    font-weight: 900;
+  }
+
+  .stroke {
+    -webkit-text-stroke: 1px #222;
+    color: transparent;
+  }
+
+  .hero-subtitle {
+    font-size: 0.9rem;
+    color: #555;
+    max-width: 500px;
+    margin: 0 auto 4rem auto;
+    line-height: 1.6;
+    letter-spacing: 0.02rem;
+  }
+
+  .email-capture {
+    max-width: 450px;
+    margin: 0 auto;
+  }
+
+  form {
+    display: flex;
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.02);
+    padding: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+
+  input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    padding: 1rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.1rem;
+    font-weight: 700;
+  }
+
+  input:focus { outline: none; }
+
+  button {
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 0 1.5rem;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.1rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  button:hover:not(:disabled) { transform: scale(1.02); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .form-msg {
+    font-size: 0.6rem;
+    letter-spacing: 0.2rem;
+    margin-top: 1rem;
+    font-weight: 900;
+  }
+
+  .shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    border-color: #ff4444 !important;
+  }
+
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+  }
+</style>

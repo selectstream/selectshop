@@ -1,0 +1,17 @@
+.env
+node_modules/
+dist/
+.astro/
+.vercel/
+.netlify/
+.gemini/
+GEMINI.md
+test-notion.js
+uploader.sh
+public/assets/stream/logs.json
+DESIGN.md
+.env.local
+MILESTONES.md
+GEMINI.md
+scripts/test-identity.js
+scripts/ensure-notion-integrity.js

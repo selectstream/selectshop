@@ -1,0 +1,258 @@
+---
+import { getCollection } from 'astro:content';
+import MainLayout from '../../layouts/MainLayout.astro';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const products = await getCollection('products');
+  return products.map(product => ({
+    params: { slug: product.data.slug },
+    props: { product },
+  }));
+}
+
+const { product } = Astro.props;
+const { title, buyLink, category = [], trendScore, image, notes, asin, priceEstimate } = product.data;
+
+// Split notes into Triple-Threat sections (Assumes: Status. Utility. Trust.)
+const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical excellence.', 'High signal.'];
+---
+
+<MainLayout 
+  title={`${title} | SelectStream`}
+  description={notes}
+>
+  <!-- Agentic Commerce Metadata (JSON-LD) -->
+  <script type="application/ld+json" is:inline set:html={JSON.stringify({
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": title,
+    "image": [image],
+    "description": notes,
+    "sku": asin,
+    "mpn": asin,
+    "gtin": product.data.gtin || "",
+    "brand": {
+      "@type": "Brand",
+      "name": "SelectStream"
+    },
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "SelectStream Signal",
+        "value": trendScore.toFixed(1),
+        "description": "A weighted technical score (0-10) based on Material Integrity, Cognitive Efficiency, and Community Momentum."
+      }
+    ],
+    "offers": {
+      "@type": "Offer",
+      "url": Astro.url,
+      "priceCurrency": "USD",
+      "price": priceEstimate || "0.00",
+      "availability": "https://schema.org/InStock",
+      "itemCondition": "https://schema.org/NewCondition",
+      "seller": {
+        "@type": "Organization",
+        "name": "SelectStream Shop"
+      }
+    }
+  })} />
+
+  <div class="focus-view">
+    <a href="/" class="back-trigger">
+      <span class="arrow">←</span>
+      <span class="label">RETURN TO STREAM</span>
+    </a>
+
+    <div class="product-stage">
+      <div class="visual-anchor">
+        {image ? (
+          <img 
+            src={image} 
+            alt={title} 
+            class="focus-image" 
+            transition:name={`img-${product.data.slug}`}
+          />
+        ) : <div class="visual-pending">IMAGE PENDING</div>}
+      </div>
+
+      <div class="content-anchor">
+        <div class="header-stack">
+          <span class="category-tag">{category[0]}</span>
+          <h1>{title}</h1>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="item-label">STATUS</span>
+            <p>{editorialParts[0]?.trim()}.</p>
+          </div>
+          <div class="summary-item">
+            <span class="item-label">UTILITY</span>
+            <p>{editorialParts[1]?.trim() || 'High-performance utility engineered for deep-work sessions.'}</p>
+          </div>
+          </div>
+        <div class="action-footer">
+          <div class="price-notice">LATEST PRICING & AVAILABILITY</div>
+          <div class="button-row">
+            <a href={buyLink} target="_blank" class="focus-btn buy-now external-handoff">
+              CHECK OFFERS ON AMAZON <span class="legal">(PAID LINK)</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<style>
+  .focus-view {
+    min-height: 100vh;
+    padding: 8rem 0;
+    position: relative;
+  }
+
+  .back-trigger {
+    position: absolute;
+    top: 4rem;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: #444;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.2rem;
+    transition: color 0.3s ease;
+  }
+
+  .back-trigger:hover {
+    color: #fff;
+  }
+
+  .product-stage {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+  }
+
+  .focus-image {
+    width: 100%;
+    height: auto;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 8px;
+  }
+
+  .header-stack h1 {
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -0.15rem;
+    text-transform: uppercase;
+    color: #fff;
+    margin-top: 1rem;
+  }
+
+  .category-tag {
+    font-size: 0.7rem;
+    color: #666;
+    letter-spacing: 0.3rem;
+    text-transform: uppercase;
+  }
+
+  .summary-grid {
+    margin-top: 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .item-label {
+    font-size: 0.6rem;
+    color: #444;
+    letter-spacing: 0.2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 900;
+  }
+
+  .summary-item p {
+    font-size: 1rem;
+    color: #999;
+    line-height: 1.5;
+    max-width: 450px;
+  }
+
+  .signal-visual-meter {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 16px;
+  }
+
+  .signal-bar-unit {
+    width: 4px;
+    height: 100%;
+    background: rgba(255,255,255,0.05);
+    border-radius: 1px;
+  }
+
+  .signal-bar-unit.active {
+    background: #00ff88;
+    box-shadow: 0 0 10px rgba(0,255,136,0.4);
+  }
+
+  .signal-score-label {
+    margin-left: 1rem;
+    font-size: 0.7rem;
+    color: #fff;
+    font-weight: 900;
+  }
+
+  .action-footer {
+    margin-top: 5rem;
+    padding-top: 3rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .price-notice {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.2rem;
+    color: #444;
+    margin-bottom: 2rem;
+    text-transform: uppercase;
+  }
+
+  .button-row {
+    display: flex;
+  }
+
+  .focus-btn {
+    flex: 1;
+    padding: 1.2rem;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.15rem;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .buy-now { background: #fff; color: #000; }
+
+  .focus-btn:hover { transform: translateY(-5px); background: #f0f0f0; }
+
+  .legal { font-size: 0.5rem; opacity: 0.4; margin-left: 0.5rem; }
+
+  @media (max-width: 1024px) {
+    .product-stage { grid-template-columns: 1fr; gap: 4rem; }
+    .focus-view { padding: 6rem 2rem; }
+  }
+</style>

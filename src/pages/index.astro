@@ -1,0 +1,380 @@
+---
+import { getCollection } from 'astro:content';
+import MainLayout from '../layouts/MainLayout.astro';
+import LandingHero from '../components/LandingHero.astro';
+import { Client } from '@notionhq/client';
+
+const ADMIN_SECRET = process.env.ADMIN_SECRET || import.meta.env.ADMIN_SECRET || 'ss_alpha_2026_distributor';
+const url = new URL(Astro.request.url);
+const providedKey = url.searchParams.get('key');
+const isAdmin = providedKey === ADMIN_SECRET;
+
+// 1. Persistence Check (Server-Side)
+const cookiePassport = Astro.cookies.get('ss_alpha_passport')?.value;
+const isUnlocked = cookiePassport === 'unlocked_2026';
+
+// Equity Metrics (Admin Only)
+let stats = { subscribers: 0, setups: 0 };
+if (isAdmin) {
+	const notion = new Client({ auth: process.env.NOTION_TOKEN });
+	try {
+		const [subs, setups] = await Promise.all([
+			process.env.SUBSCRIBERS_DATABASE_ID ? notion.databases.query({ database_id: process.env.SUBSCRIBERS_DATABASE_ID }) : { results: [] },
+			process.env.SETUPS_DATABASE_ID ? notion.databases.query({ database_id: process.env.SETUPS_DATABASE_ID }) : { results: [] }
+		]);
+		stats.subscribers = subs.results.length || 0;
+		stats.setups = setups.results.length || 0;
+	} catch (e: any) {
+		console.error('Equity Fetch Error:', e.message);
+	}
+}
+
+const products = await getCollection('products') || [];
+const productsWithImages = products.filter(p => p.data.image && p.data.image.length > 5);
+const sortedProducts = productsWithImages.sort((a, b) => b.data.trendScore - a.data.trendScore);
+
+// Vault Categories for Sidebar
+const vaults = [...new Set(sortedProducts.map(p => p.data.category?.[0] || 'ESSENTIAL'))].sort();
+
+// Helper for dynamic signal meter
+const getSignalData = (score: number, status: string) => {
+	const activeBars = score >= 7 ? 3 : (score >= 4 ? 2 : 1);
+	const color = status === 'Live' ? '#00ff88' : '#ff4444';
+	return { activeBars, color };
+};
+---
+
+<MainLayout title={isAdmin ? "[ADMIN] SelectStream | Full Stream" : "SelectStream Shop | Curated Product Stream"}>
+	{isAdmin ? (
+		<section class="admin-dashboard">
+			<div class="vitals-bar">
+				<div class="vital-item">
+					<span class="label">ALPHA SUBS</span>
+					<span class="value">{stats.subscribers}</span>
+				</div>
+				<div class="vital-item">
+					<span class="label">CLOUD SETUPS</span>
+					<span class="value">{stats.setups}</span>
+				</div>
+				<div class="vital-item">
+					<span class="label">MESH COVERAGE</span>
+					<span class="value">{Math.round((sortedProducts.filter(p => p.data.mesh.direct).length / sortedProducts.length) * 100)}%</span>
+				</div>
+				<div class="vital-item">
+					<span class="label">SYSTEM STATUS</span>
+					<span class="value pulse">OPERATIONAL</span>
+				</div>
+			</div>
+			<h1>Production Stream</h1>
+			<p class="admin-subtitle">INTERNAL AUDIT ACTIVE • EQUITY METRICS SYNCED</p>
+		</section>
+	) : (
+		<div id="unlocked-header" style={isUnlocked ? "display: block" : "display: none"}>
+			<section class="admin-dashboard" style="border-bottom-color: #222;">
+				<h1>THE ALPHA STREAM</h1>
+				<p class="admin-subtitle">ACCESS GRANTED • EXPLORING THE VAULT</p>
+			</section>
+		</div>
+		<div id="locked-header" style={!isUnlocked ? "display: block" : "display: none"}>
+			<LandingHero />
+		</div>
+	)}
+
+	<section class="products-feed brutalist-layout">
+		<aside class="vault-sidebar">
+			<h2 class="sidebar-label">DIRECTORY</h2>
+			<nav class="vault-nav">
+				<button class="vault-link active" data-vault="all">00_FULL_STREAM</button>
+				{vaults.map((vault, i) => (
+					<button class="vault-link" data-vault={vault}>
+						{String(i + 1).padStart(2, '0')}_{vault.toUpperCase().replace(/\s+/g, '_')}
+					</button>
+				))}
+			</nav>
+		</aside>
+
+		<div class="stream-container">
+			<h2 class="section-label" id="feed-label">{isAdmin ? 'FULL REVENUE MESH VIEW' : (isUnlocked ? 'THE VAULT IS OPEN' : 'THE ALPHA STREAM')}</h2>
+			<div class="products-grid" id="main-grid">
+			{sortedProducts && sortedProducts.length > 0 ? sortedProducts.map((product, index) => {
+				const signal = getSignalData(product.data.trendScore, product.data.status);
+				return (
+				<div 
+					class={`product-entry ${index >= 6 ? 'locked-item' : 'rarity-card'}`}
+					data-category={product.data.category?.[0] || 'ESSENTIAL'}
+					style={`animation-delay: ${index * 0.1}s; ${(index >= 6 && !isAdmin && !isUnlocked) ? 'display: none' : 'display: block'}`}
+					key={product.data.id}
+				>
+					<div class="card-flipper">
+						{/* FRONT FACE */}
+						<div class={`minimal-card card-face card-front ${product.data.trendScore >= 9 ? 'subtle-pulse' : ''}`}>
+							{isAdmin && (
+								<div class="admin-metadata-overlay">
+									<span class="meta-badge">ASIN: {product.data.asin || 'NONE'}</span>
+									<span class={`meta-badge source-${product.data.mesh.activeSource}`}>
+										{product.data.mesh.activeSource.toUpperCase()}
+									</span>
+								</div>
+							)}
+							<div class="visual-viewport">
+								<div class="shimmer-overlay"></div>
+								<img src={product.data.image} alt={product.data.title} loading="lazy" />
+							</div>
+							<div class="card-meta-container">
+								<div class="card-meta">
+									<span class="meta-category">{product.data.category?.[0]}</span>
+									<h3>{product.data.title}</h3>
+								</div>
+								<div class="analytics-footer">
+									<div class="signal-group">
+										<div class="signal-meter">
+											{[1, 2, 3].map(bar => (
+												<div class={`signal-bar bar-${bar} ${bar <= signal.activeBars ? 'active' : ''}`} style={bar <= signal.activeBars ? `--bar-color: ${signal.color}` : ''}></div>
+											))}
+										</div>
+										<span class="score-value">{product.data.trendScore.toFixed(1)}</span>
+									</div>
+									<div class="action-group">
+										<button class="footer-action-btn info-btn" title="Blueprint">
+											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+										</button>
+										<button class="footer-action-btn add-btn" data-product={JSON.stringify({id: product.data.id, title: product.data.title, priceEstimate: product.data.priceEstimate})}>
+											<svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+										</button>
+										<div class="collapsible-buy">
+											<a href={product.data.buyLink} target="_blank" class="buy-trigger">
+												<span class="buy-label">PRICE</span>
+												<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+											</a>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* BACK FACE (Blueprint) */}
+						<div class="minimal-card card-face card-back">
+							<div class="blueprint-header">
+								<span class="bp-label">TECHNICAL_SPEC</span>
+								<button class="close-flip-btn">&times;</button>
+							</div>
+							<div class="blueprint-body">
+								<div class="spec-row"><span class="label">ID</span><span class="val">{product.data.slug}</span></div>
+								<div class="spec-row"><span class="label">ASIN</span><span class="val">{product.data.asin || 'N/A'}</span></div>
+								<div class="spec-row"><span class="label">NODE_TYPE</span><span class="val">{product.data.productType}</span></div>
+								<div class="blueprint-graph">
+									<div class="grid-mesh"></div>
+									<p>{product.data.notes}</p>
+								</div>
+								</div>
+							<a href={`/products/${product.data.slug}${isAdmin ? '?key=' + ADMIN_SECRET : ''}`} class="full-spec-link">OPEN_SPEC_SHEET</a>
+						</div>
+					</div>
+				</div>
+			)}) : (
+				<div class="empty-state">THE STREAM IS OFFLINE.</div>
+			)}
+			</div>
+
+			<div class="launch-lock" id="launch-lock-cta" style={(isAdmin || isUnlocked) ? "display: none" : "display: block"}>
+				<div class="lock-blur"></div>
+				<div class="lock-content">
+					<p>FULL STREAM CURATIONS LOCKED IN THE <span class="vault-trigger-link">VAULTS</span></p>
+					<span class="sub">JOIN THE ALPHA TO UNLOCK THE FULL STREAM</span>
+				</div>
+			</div>
+		</div>
+	</section>
+</MainLayout>
+
+<script>
+	const initInteractivity = () => {
+		const haptic = (ms = 10) => { if ('vibrate' in navigator) navigator.vibrate(ms); };
+		const isUnlocked = document.cookie.includes('ss_alpha_passport=unlocked_2026') || localStorage.getItem('ss_alpha_passport') === 'unlocked_2026';
+		const isAdmin = new URL(window.location.href).searchParams.has('key');
+
+		// 3D Flip
+		document.querySelectorAll('.info-btn, .close-flip-btn').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				e.preventDefault(); e.stopPropagation();
+				haptic(15);
+				btn.closest('.product-entry')?.classList.toggle('is-flipped');
+			});
+		});
+
+		// Filtering
+		document.querySelectorAll('.vault-link').forEach(link => {
+			link.addEventListener('click', () => {
+				haptic(5);
+				const vault = link.getAttribute('data-vault');
+				document.querySelectorAll('.vault-link').forEach(l => l.classList.remove('active'));
+				link.classList.add('active');
+				document.querySelectorAll('.product-entry').forEach(entry => {
+					const category = entry.getAttribute('data-category');
+					const isLocked = entry.classList.contains('locked-item');
+					if (vault === 'all' || category === vault) {
+						if (!isLocked || isAdmin || isUnlocked) (entry as HTMLElement).style.display = 'block';
+					} else { (entry as HTMLElement).style.display = 'none'; }
+				});
+			});
+		});
+
+		// Unlock UI
+		if (isUnlocked && !isAdmin) {
+			document.getElementById('locked-header')?.style.setProperty('display', 'none');
+			document.getElementById('unlocked-header')?.style.setProperty('display', 'block');
+			document.getElementById('launch-lock-cta')?.style.setProperty('display', 'none');
+			const label = document.getElementById('feed-label'); if (label) label.textContent = 'THE VAULT IS OPEN';
+			document.querySelectorAll('.locked-item').forEach(item => { (item as HTMLElement).style.display = 'block'; });
+		}
+
+		// Shimmer
+		document.querySelectorAll('.rarity-card').forEach(card => {
+			const shimmer = card.querySelector('.shimmer-overlay') as HTMLElement;
+			card.addEventListener('mousemove', (e: any) => {
+				const { left, top, width, height } = card.getBoundingClientRect();
+				const x = ((e.clientX - left) / width) * 100;
+				const y = ((e.clientY - top) / height) * 100;
+				if (shimmer) shimmer.style.background = `radial-gradient(circle at ${x}% ${y}%, rgba(255,255,255,0.1) 0%, transparent 50%)`;
+			});
+			card.addEventListener('mouseleave', () => { if (shimmer) shimmer.style.background = 'transparent'; });
+		});
+
+		// Alpha Gate
+		document.querySelectorAll('.curation-trigger, .vault-trigger-link').forEach(link => {
+			link.addEventListener('click', (e) => {
+				if (!isAdmin && !isUnlocked) {
+					e.preventDefault();
+					if (link.classList.contains('vault-trigger-link')) {
+						document.getElementById('alpha-capture-section')?.scrollIntoView({behavior:'smooth'});
+					} else {
+						window.dispatchEvent(new CustomEvent('trigger-alpha-gate'));
+					}
+				}
+			});
+		});
+
+		// Setup Logic
+		const updateBtn = (items: any[]) => {
+			document.querySelectorAll('.add-btn').forEach(btn => {
+				const id = JSON.parse(btn.getAttribute('data-product') || '{}').id;
+				const inSetup = items.some(i => i.id === id);
+				btn.classList.toggle('added', inSetup);
+				btn.innerHTML = inSetup ? '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6L5 9L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+			});
+		};
+		updateBtn(JSON.parse(localStorage.getItem('selectstream_setup') || '[]'));
+		window.addEventListener('setup-updated', (e:any) => updateBtn(e.detail));
+		document.querySelectorAll('.add-btn').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				e.preventDefault(); e.stopPropagation(); haptic(10);
+				const p = JSON.parse(btn.getAttribute('data-product') || '{}');
+				const setup = JSON.parse(localStorage.getItem('selectstream_setup') || '[]');
+				const inSetup = setup.some((i:any) => i.id === p.id);
+				window.dispatchEvent(new CustomEvent(inSetup ? 'remove-from-setup' : 'add-to-setup', { detail: inSetup ? p.id : p }));
+			});
+		});
+	};
+	initInteractivity(); document.addEventListener('astro:after-swap', initInteractivity);
+</script>
+
+<style>
+	.brutalist-layout { display: flex; gap: 4rem; margin-top: 4rem; }
+	.vault-sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 10rem; height: fit-content; }
+	.sidebar-label { font-size: 0.5rem; letter-spacing: 0.4rem; color: #222; margin-bottom: 2rem; font-weight: 900; }
+	.vault-nav { display: flex; flex-direction: column; gap: 0.8rem; }
+	.vault-link { background: none; border: none; color: #444; font-family: var(--family-mono, monospace); font-size: 0.6rem; text-align: left; cursor: pointer; letter-spacing: 0.1rem; transition: all 0.2s ease; padding: 0.5rem 0; border-bottom: 1px solid transparent; }
+	.vault-link.active { color: #00ff88; border-bottom-color: #00ff88; }
+	.stream-container { flex: 1; min-width: 0; }
+	.section-label { font-size: 0.6rem; letter-spacing: 0.4rem; color: #222; margin-bottom: 4rem; font-weight: 900; }
+
+	.products-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 3rem;
+		perspective: 1500px; /* Enhanced depth */
+	}
+
+	.product-entry {
+		position: relative;
+		min-height: 450px; /* Preserve card height for flip */
+		transform-style: preserve-3d;
+	}
+
+	.card-flipper {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+		transform-style: preserve-3d;
+	}
+
+	.product-entry.is-flipped .card-flipper { transform: rotateY(180deg); }
+
+	.card-face {
+		position: absolute;
+		inset: 0;
+		backface-visibility: hidden;
+		display: flex;
+		flex-direction: column;
+		background: #080808;
+		border: 1px solid rgba(255,255,255,0.02);
+		border-radius: 4px;
+		box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+	}
+
+	.card-back {
+		transform: rotateY(180deg);
+		background: #030303 !important;
+		padding: 2rem;
+		border-color: rgba(255,255,255,0.05);
+	}
+
+	.visual-viewport { position: relative; overflow: hidden; background: #030303; border-radius: 4px 4px 0 0; }
+	img { width: 100%; height: auto; display: block; object-fit: contain; opacity: 0.6; transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+	.minimal-card:hover img { opacity: 0.9; transform: scale(1.05); }
+
+	.card-meta-container { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+	h3 { font-size: 1rem; color: #fff; line-height: 1.2; margin: 0.5rem 0; }
+	.meta-category { font-size: 0.5rem; color: #444; text-transform: uppercase; letter-spacing: 0.2rem; }
+
+	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.02); padding-top: 1rem; }
+	.signal-group { display: flex; align-items: center; gap: 0.8rem; }
+	.signal-meter { display: flex; align-items: flex-end; gap: 2px; height: 10px; }
+	.signal-bar { width: 3px; background: #111; border-radius: 1px; }
+	.signal-bar.active { background: var(--bar-color); box-shadow: 0 0 5px var(--bar-color); }
+	.bar-1 { height: 40%; } .bar-2 { height: 70%; } .bar-3 { height: 100%; }
+	.score-value { font-size: 0.6rem; color: #666; font-weight: 900; }
+
+	.action-group { display: flex; gap: 0.5rem; }
+	.footer-action-btn { width: 30px; height: 30px; background: #111; border: 1px solid #222; border-radius: 50%; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+	.footer-action-btn:hover { background: #fff; color: #000; transform: scale(1.1); }
+	.footer-action-btn.added { background: #00ff88; border-color: #00ff88; color: #000; }
+
+	.collapsible-buy { overflow: hidden; display: flex; }
+	.buy-trigger { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.8rem; background: #111; border-radius: 100px; color: #fff; font-size: 0.5rem; font-weight: 900; border: 1px solid #222; text-decoration: none; }
+	.buy-label { width: 0; opacity: 0; transition: all 0.4s ease; overflow: hidden; }
+	.minimal-card:hover .buy-label { width: 35px; opacity: 1; }
+	.buy-trigger:hover { background: #fff; color: #000; }
+
+	/* BLUEPRINT BACK STYLES */
+	.blueprint-header { display: flex; justify-content: space-between; border-bottom: 1px solid #111; padding-bottom: 1rem; }
+	.bp-label { font-family: var(--family-mono, monospace); font-size: 0.5rem; color: #444; letter-spacing: 0.2rem; }
+	.close-flip-btn { background: none; border: none; color: #444; font-size: 1.5rem; cursor: pointer; }
+	.spec-row { display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid #111; }
+	.spec-row .label { font-size: 0.4rem; color: #333; font-family: var(--family-mono, monospace); }
+	.spec-row .val { font-size: 0.5rem; color: #00ff88; font-family: var(--family-mono, monospace); }
+	.blueprint-graph { flex: 1; margin: 1.5rem 0; position: relative; background: #050505; border: 1px solid #111; padding: 1rem; overflow: hidden; }
+	.grid-mesh { position: absolute; inset: 0; background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px); background-size: 10px 10px; opacity: 0.5; }
+	.blueprint-graph p { font-size: 0.55rem; color: #666; line-height: 1.5; position: relative; z-index: 2; font-family: var(--family-mono, monospace); }
+	.full-spec-link { display: block; padding: 0.8rem; background: #00ff88; color: #000; text-align: center; font-size: 0.6rem; font-weight: 900; text-decoration: none; }
+
+	/* ADMIN/LANDING */
+	.admin-dashboard { padding: 8rem 0 4rem 0; text-align: center; border-bottom: 1px solid #111; }
+	.vitals-bar { display: inline-flex; gap: 2rem; padding: 1rem 2rem; background: #080808; border: 1px solid #111; border-radius: 4px; margin-bottom: 2rem; }
+	.vital-item { display: flex; flex-direction: column; align-items: center; }
+	.vital-item .label { font-size: 0.4rem; color: #444; letter-spacing: 0.1rem; }
+	.vital-item .value { font-family: var(--family-mono, monospace); font-size: 0.7rem; color: #fff; }
+	.launch-lock { position: relative; margin-top: -8rem; padding: 12rem 0; text-align: center; z-index: 10; cursor: pointer; }
+	.lock-blur { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, #000 70%); backdrop-filter: blur(10px); }
+</style>

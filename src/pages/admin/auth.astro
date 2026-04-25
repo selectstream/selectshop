@@ -1,0 +1,157 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import 'dotenv/config';
+
+const ADMIN_SECRET = process.env.ADMIN_SECRET || 'dev_secret_123';
+const { searchParams } = Astro.url;
+const providedKey = searchParams.get('key');
+
+const isAuthorized = providedKey === ADMIN_SECRET;
+---
+
+<MainLayout title="Admin | Pinterest Authorization">
+	{isAuthorized ? (
+		<section class="auth-center">
+			<div class="auth-card">
+				<div class="auth-header">
+					<span class="status-badge">TRIAL ACCESS ACTIVE</span>
+					<h1>Pinterest Integration</h1>
+					<p>Authorize the SelectStream Autonomous Distributor to enable the Social Swarm.</p>
+				</div>
+				
+				<div class="feature-list">
+					<div class="feature-item">
+						<span class="feature-icon">🛡️</span>
+						<div>
+							<h3>Affiliate Guard</h3>
+							<p>Ensures 100% compliant selectstream-20 links.</p>
+						</div>
+					</div>
+					<div class="feature-item">
+						<span class="feature-icon">🛰️</span>
+						<div>
+							<h3>Social Swarm</h3>
+							<p>Autonomous distribution to Deep Work & Workspace boards.</p>
+						</div>
+					</div>
+				</div>
+
+				<a href={`https://www.pinterest.com/oauth/?client_id=1561966&redirect_uri=https%3A%2F%2Fselectstreamshop.com%2Fapi%2Fauth%2Fpinterest%2Fcallback&response_type=code&scope=boards%3Aread%2Cboards%3Awrite%2Cpins%3Aread%2Cpins%3Awrite%2Cuser_accounts%3Aread`} class="auth-btn">
+					AUTHORIZE SELECTSTREAM
+				</a>
+				
+				<p class="disclaimer">By authorizing, you enable read/write access to your curated Pinterest boards for the purpose of autonomous social broadcasting.</p>
+			</div>
+		</section>
+	) : (
+		<section class="auth-center unauthorized">
+			<div class="error-msg">
+				<span class="code">404</span>
+				<p>THE REQUESTED RESOURCE IS NOT PART OF THE CURRENT STREAM.</p>
+				<a href="/" class="return-link">RETURN TO HOME</a>
+			</div>
+		</section>
+	)}
+</MainLayout>
+
+<style>
+	.auth-center {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 70vh;
+		padding: 2rem;
+	}
+
+	.unauthorized { color: #222; text-align: center; }
+	.error-msg .code { font-size: 8rem; font-weight: 900; letter-spacing: -0.5rem; display: block; line-height: 1; }
+	.error-msg p { font-size: 0.6rem; letter-spacing: 0.2rem; margin-top: 1rem; color: #444; }
+	.return-link { display: inline-block; margin-top: 3rem; color: #fff; font-size: 0.6rem; letter-spacing: 0.3rem; text-decoration: none; border-bottom: 1px solid #333; padding-bottom: 0.5rem; }
+
+	.auth-card {
+		background: #080808;
+		border: 1px solid rgba(255,255,255,0.05);
+		padding: 3rem;
+		max-width: 500px;
+		width: 100%;
+		border-radius: 4px;
+		box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+		text-align: center;
+	}
+
+	.status-badge {
+		font-size: 0.5rem;
+		letter-spacing: 0.2rem;
+		color: #444;
+		border: 1px solid #222;
+		padding: 0.4rem 0.8rem;
+		border-radius: 100px;
+		display: inline-block;
+		margin-bottom: 2rem;
+	}
+
+	h1 {
+		font-size: 1.5rem;
+		margin-bottom: 0.5rem;
+		letter-spacing: -0.02rem;
+	}
+
+	.auth-header p {
+		font-size: 0.8rem;
+		color: #666;
+		margin-bottom: 3rem;
+	}
+
+	.feature-list {
+		text-align: left;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		margin-bottom: 3rem;
+	}
+
+	.feature-item {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+	}
+
+	.feature-icon {
+		font-size: 1.2rem;
+	}
+
+	.feature-item h3 {
+		font-size: 0.8rem;
+		margin-bottom: 0.1rem;
+		color: #fff;
+	}
+
+	.feature-item p {
+		font-size: 0.7rem;
+		color: #444;
+	}
+
+	.auth-btn {
+		display: block;
+		background: #fff;
+		color: #000;
+		padding: 1.2rem;
+		font-size: 0.7rem;
+		font-weight: 900;
+		letter-spacing: 0.2rem;
+		text-decoration: none;
+		transition: all 0.3s ease;
+		margin-bottom: 1.5rem;
+	}
+
+	.auth-btn:hover {
+		transform: scale(1.02);
+		background: #e0e0e0;
+	}
+
+	.disclaimer {
+		font-size: 0.6rem;
+		color: #333;
+		line-height: 1.4;
+	}
+</style>

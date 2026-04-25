@@ -1,0 +1,388 @@
+---
+---
+
+<setup-builder></setup-builder>
+
+<div id="setup-sidebar" class="sidebar-closed">
+  <div class="sidebar-header">
+    <h2>YOUR SETUP</h2>
+    <div class="header-actions">
+      <div id="batch-controls" style="display: none;">
+        <input type="checkbox" id="select-all-items" title="Select All" />
+        <button id="remove-selected" class="action-btn remove-batch-btn" title="Remove Selected">
+          <svg width="12" height="2" viewBox="0 0 12 2" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1 1H11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <button id="close-sidebar" class="icon-btn">&times;</button>
+    </div>
+  </div>
+  
+  <div id="setup-items" class="items-container">
+    <p class="empty-msg">No items in your current stream.</p>
+  </div>
+
+  <div class="cloud-sync-section" id="cloud-sync-area" style="display: none;">
+    <div class="sync-input-group">
+      <input type="email" id="sync-email" placeholder="EMAIL TO SAVE SETUP" />
+      <button id="trigger-cloud-sync" class="sync-btn">SAVE TO CLOUD</button>
+    </div>
+    <p id="sync-status" class="sync-status-msg"></p>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="total-stats">
+      <span id="setup-count">0 ITEMS</span>
+    </div>
+    <button id="checkout-setup" class="primary-btn">BUY MY SETUP (AMAZON)</button>
+  </div>
+</div>
+
+<button id="open-sidebar" class="floating-trigger">
+  <span class="count-badge">0</span>
+  <span class="label">MY SETUP</span>
+</button>
+
+<script>
+  import '../scripts/setup-builder.js';
+
+  const sidebar = document.getElementById('setup-sidebar');
+  const openBtn = document.getElementById('open-sidebar');
+  const closeBtn = document.getElementById('close-sidebar');
+  const checkoutBtn = document.getElementById('checkout-setup');
+  const itemsContainer = document.getElementById('setup-items');
+  const countDisplay = document.getElementById('setup-count');
+  const badge = document.querySelector('.count-badge');
+  const selectAllCheckbox = document.getElementById('select-all-items');
+  const removeSelectedBtn = document.getElementById('remove-selected');
+  const batchControls = document.getElementById('batch-controls');
+  const cloudSyncArea = document.getElementById('cloud-sync-area');
+  const syncEmailInput = document.getElementById('sync-email') as HTMLInputElement;
+  const syncBtn = document.getElementById('trigger-cloud-sync');
+  const syncStatus = document.getElementById('sync-status');
+
+  openBtn.addEventListener('click', () => sidebar.classList.remove('sidebar-closed'));
+  closeBtn.addEventListener('click', () => sidebar.classList.add('sidebar-closed'));
+
+  selectAllCheckbox.addEventListener('change', (e) => {
+    const checkboxes = document.querySelectorAll('.item-selector');
+    checkboxes.forEach(cb => cb.checked = (e.target as HTMLInputElement).checked);
+  });
+
+  removeSelectedBtn.addEventListener('click', () => {
+    const selectedIds = Array.from(document.querySelectorAll('.item-selector:checked'))
+      .map(cb => cb.getAttribute('data-id'));
+    
+    if (selectedIds.length > 0) {
+      const builder = document.querySelector('setup-builder') as any;
+      if (builder) builder.removeItems(selectedIds);
+      selectAllCheckbox.checked = false;
+    }
+  });
+
+  // Cloud Sync Interaction
+  syncBtn?.addEventListener('click', async () => {
+    const email = syncEmailInput.value;
+    if (!email || !email.includes('@')) {
+      if (syncStatus) syncStatus.textContent = "INVALID EMAIL.";
+      return;
+    }
+
+    const builder = document.querySelector('setup-builder') as any;
+    if (!builder) return;
+
+    if (syncBtn) syncBtn.textContent = "SYNCING...";
+    if (syncBtn) (syncBtn as HTMLButtonElement).disabled = true;
+
+    const result = await builder.syncToCloud(email);
+
+    if (result.success) {
+      if (syncStatus) syncStatus.textContent = "SETUP ANCHORED TO CLOUD.";
+      if (syncBtn) syncBtn.textContent = "SAVED";
+      setTimeout(() => {
+        if (syncBtn) syncBtn.textContent = "SAVE TO CLOUD";
+        if (syncBtn) (syncBtn as HTMLButtonElement).disabled = false;
+      }, 3000);
+    } else {
+      if (syncStatus) syncStatus.textContent = "SYNC ERROR. TRY LATER.";
+      if (syncBtn) syncBtn.textContent = "RETRY";
+      if (syncBtn) (syncBtn as HTMLButtonElement).disabled = false;
+    }
+  });
+
+  checkoutBtn.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('request-setup-checkout'));
+  });
+
+  window.addEventListener('setup-updated', (e: any) => {
+    const items = e.detail;
+    
+    countDisplay.textContent = `${items.length} ${items.length === 1 ? 'ITEM' : 'ITEMS'}`;
+    badge.textContent = items.length;
+    badge.style.display = items.length > 0 ? 'flex' : 'none';
+
+    if (items.length === 0) {
+      itemsContainer.innerHTML = '<p class="empty-msg">No items in your current stream.</p>';
+      batchControls.style.display = 'none';
+      cloudSyncArea.style.display = 'none';
+    } else {
+      batchControls.style.display = 'flex';
+      cloudSyncArea.style.display = 'block';
+      itemsContainer.innerHTML = items.map(item => `
+        <div class="setup-item">
+          <div class="item-selection">
+            <input type="checkbox" class="item-selector" data-id="${item.id}" />
+            <div class="item-info">
+              <h4>${item.title}</h4>
+              <p>$${item.priceEstimate || '???'}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  });
+</script>
+
+<style>
+  #setup-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 400px;
+    height: 100vh;
+    background: rgba(8,8,8,0.7);
+    border-left: 1px solid rgba(255,255,255,0.05);
+    z-index: 10000;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    backdrop-filter: blur(40px);
+  }
+
+  .sidebar-closed {
+    transform: translateX(100%);
+  }
+
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3rem;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  #batch-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .remove-batch-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    color: #ff4444;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .remove-batch-btn:hover {
+    background: #ff4444;
+    color: #fff;
+  }
+
+  .cloud-sync-section {
+    padding: 2rem 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    margin-top: 2rem;
+  }
+
+  .sync-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  #sync-email {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    padding: 0.8rem;
+    color: #fff;
+    font-size: 0.6rem;
+    letter-spacing: 0.1rem;
+    border-radius: 4px;
+  }
+
+  .sync-btn {
+    background: #222;
+    color: #fff;
+    border: 1px solid #333;
+    padding: 0.8rem;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .sync-btn:hover:not(:disabled) {
+    background: #fff;
+    color: #000;
+  }
+
+  .sync-status-msg {
+    font-size: 0.5rem;
+    color: #00ff88;
+    margin-top: 0.8rem;
+    letter-spacing: 0.1rem;
+    font-weight: 900;
+  }
+
+  h2 { font-size: 1rem; letter-spacing: 0.3rem; margin: 0; color: #666; }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .items-container {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .empty-msg {
+    color: #333;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+    margin-top: 4rem;
+    text-align: center;
+  }
+
+  .setup-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .item-selection {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  input[type="checkbox"] {
+    accent-color: #fff;
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+    background: #000;
+    border: 1px solid #333;
+  }
+
+  .item-info h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.2rem;
+    color: #fff;
+  }
+
+  .item-info p {
+    font-size: 0.7rem;
+    color: #666;
+  }
+
+  .remove-item {
+    background: rgba(255,255,255,0.05);
+    border: none;
+    color: #444;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .remove-item:hover {
+    background: #fff;
+    color: #000;
+  }
+
+  .sidebar-footer {
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .total-stats {
+    margin-bottom: 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.2rem;
+    color: #888;
+  }
+
+  .primary-btn {
+    width: 100%;
+    padding: 1.2rem;
+    background: #fff;
+    color: #000;
+    border: none;
+    font-weight: 900;
+    font-size: 0.8rem;
+    letter-spacing: 0.1rem;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .primary-btn:hover {
+    transform: scale(1.02);
+  }
+
+  .floating-trigger {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 900;
+    font-size: 0.7rem;
+    letter-spacing: 0.2rem;
+    z-index: 9999;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+
+  .count-badge {
+    background: #000;
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+  }
+</style>
