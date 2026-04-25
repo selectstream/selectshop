@@ -122,7 +122,7 @@ const getSignalData = (score: number, status: string) => {
 							</div>
 							<div class="card-meta-container">
 								<div class="card-meta">
-									<span class="meta-category">{product.data.category?.[0]}</span>
+									<span class="diagnostic-label">DIAGNOSIS: {product.data.painPoint?.toUpperCase()}</span>
 									<h3>{product.data.title}</h3>
 								</div>
 								<div class="analytics-footer">
@@ -160,13 +160,13 @@ const getSignalData = (score: number, status: string) => {
 							</div>
 							<div class="blueprint-body">
 								<div class="spec-row"><span class="label">ID</span><span class="val">{product.data.slug}</span></div>
-								<div class="spec-row"><span class="label">ASIN</span><span class="val">{product.data.asin || 'N/A'}</span></div>
+								<div class="spec-row"><span class="label">HYBRID_STACK</span><span class="val">{product.data.digitalStack}</span></div>
 								<div class="spec-row"><span class="label">NODE_TYPE</span><span class="val">{product.data.productType}</span></div>
 								<div class="blueprint-graph">
 									<div class="grid-mesh"></div>
 									<p>{product.data.notes}</p>
 								</div>
-								</div>
+							</div>
 							<a href={`/products/${product.data.slug}${isAdmin ? '?key=' + ADMIN_SECRET : ''}`} class="full-spec-link">OPEN_SPEC_SHEET</a>
 						</div>
 					</div>
@@ -292,12 +292,12 @@ const getSignalData = (score: number, status: string) => {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		gap: 3rem;
-		perspective: 1500px; /* Enhanced depth */
+		perspective: 1500px;
 	}
 
 	.product-entry {
 		position: relative;
-		min-height: 450px; /* Preserve card height for flip */
+		min-height: 450px;
 		transform-style: preserve-3d;
 	}
 
@@ -336,7 +336,15 @@ const getSignalData = (score: number, status: string) => {
 
 	.card-meta-container { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
 	h3 { font-size: 1rem; color: #fff; line-height: 1.2; margin: 0.5rem 0; }
-	.meta-category { font-size: 0.5rem; color: #444; text-transform: uppercase; letter-spacing: 0.2rem; }
+	
+	.diagnostic-label { 
+		font-family: var(--family-mono, monospace);
+		font-size: 0.5rem; 
+		color: #ff4444; /* Alert Color for Diagnosis */
+		text-transform: uppercase; 
+		letter-spacing: 0.2rem; 
+		font-weight: 900;
+	}
 
 	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.02); padding-top: 1rem; }
 	.signal-group { display: flex; align-items: center; gap: 0.8rem; }
@@ -363,7 +371,7 @@ const getSignalData = (score: number, status: string) => {
 	.close-flip-btn { background: none; border: none; color: #444; font-size: 1.5rem; cursor: pointer; }
 	.spec-row { display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid #111; }
 	.spec-row .label { font-size: 0.4rem; color: #333; font-family: var(--family-mono, monospace); }
-	.spec-row .val { font-size: 0.5rem; color: #00ff88; font-family: var(--family-mono, monospace); }
+	.spec-row .val { font-size: 0.45rem; color: #00ff88; font-family: var(--family-mono, monospace); max-width: 60%; text-align: right; }
 	.blueprint-graph { flex: 1; margin: 1.5rem 0; position: relative; background: #050505; border: 1px solid #111; padding: 1rem; overflow: hidden; }
 	.grid-mesh { position: absolute; inset: 0; background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px); background-size: 10px 10px; opacity: 0.5; }
 	.blueprint-graph p { font-size: 0.55rem; color: #666; line-height: 1.5; position: relative; z-index: 2; font-family: var(--family-mono, monospace); }

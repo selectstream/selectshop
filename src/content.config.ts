@@ -86,6 +86,8 @@ const products = defineCollection({
 						productType: (props['Product Type']?.select?.name?.toLowerCase() === 'digital') ? 'digital' : 'physical',
 						asin: extractASIN(amazonUrl),
 						gtin: props['GTIN/UPC']?.rich_text?.[0]?.plain_text || '',
+						painPoint: props['Pain Point']?.select?.name || '',
+						digitalStack: props['Digital Stack']?.rich_text?.[0]?.plain_text || '',
 						category: props['Stream Category']?.multi_select?.map((s: any) => s.name) || [],					status: props['Status']?.status?.name || 'Draft',
 					trendScore: finalSignal,
 					priceEstimate: props['Price (Numeric)']?.number ?? 0,
