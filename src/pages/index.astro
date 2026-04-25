@@ -8,32 +8,18 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET || import.meta.env.ADMIN_SECRET ||
 const url = new URL(Astro.request.url);
 const providedKey = url.searchParams.get('key');
 const isAdmin = providedKey === ADMIN_SECRET;
-
-// 1. Persistence Check (Server-Side)
 const cookiePassport = Astro.cookies.get('ss_alpha_passport')?.value;
 const isUnlocked = cookiePassport === 'unlocked_2026';
-
-// Equity Metrics (Admin Only)
-let stats = { subscribers: 0, setups: 0 };
-if (isAdmin) {
-	const notion = new Client({ auth: process.env.NOTION_TOKEN });
-	try {
-		const [subs, setups] = await Promise.all([
-			process.env.SUBSCRIBERS_DATABASE_ID ? notion.databases.query({ database_id: process.env.SUBSCRIBERS_DATABASE_ID }) : { results: [] },
-			process.env.SETUPS_DATABASE_ID ? notion.databases.query({ database_id: process.env.SETUPS_DATABASE_ID }) : { results: [] }
-		]);
-		stats.subscribers = subs.results.length || 0;
-		stats.setups = setups.results.length || 0;
-	} catch (e: any) {
-		console.error('Equity Fetch Error:', e.message);
-	}
-}
 
 const products = await getCollection('products') || [];
 const productsWithImages = products.filter(p => p.data.image && p.data.image.length > 5);
 
-// Vault Directory (The Custodians)
-const vaults = [...new Set(productsWithImages.map(p => p.data.category?.[0] || 'ESSENTIAL'))].sort();
+// Vault Data (Custodians)
+const vaultCategories = [...new Set(productsWithImages.map(p => p.data.category?.[0] || 'ESSENTIAL'))].sort();
+const vaultMap = vaultCategories.map(cat => ({
+	name: cat,
+	nodes: productsWithImages.filter(p => p.data.category?.[0] === cat)
+}));
 
 // Helper for dynamic signal meter
 const getSignalData = (score: number, status: string) => {
@@ -43,317 +29,363 @@ const getSignalData = (score: number, status: string) => {
 };
 ---
 
-<MainLayout title={isAdmin ? "[ADMIN] SelectStream | Full Stream" : "SelectStream Shop | Curated Product Stream"}>
-	{isAdmin ? (
-		<section class="admin-dashboard">
-			<div class="vitals-bar">
-				<div class="vital-item"><span class="label">ALPHA SUBS</span><span class="value">{stats.subscribers}</span></div>
-				<div class="vital-item"><span class="label">CLOUD SETUPS</span><span class="value">{stats.setups}</span></div>
-				<div class="vital-item"><span class="label">SYSTEM STATUS</span><span class="value pulse">OPERATIONAL</span></div>
-			</div>
-			<h1>Production Stream</h1>
-			<p class="admin-subtitle">INTERNAL AUDIT ACTIVE • EQUITY METRICS SYNCED</p>
+<MainLayout title="SelectStream | Spatial Laboratory">
+	<div id="unlocked-header" style={isUnlocked ? "display: block" : "display: none"}>
+		<section class="lab-dashboard">
+			<h1>SOVEREIGN_CANVAS_v1.8</h1>
+			<p class="admin-subtitle">LABORATORY ACTIVE • SPATIAL_CURATION_MODE</p>
 		</section>
-	) : (
-		<div id="unlocked-header" style={isUnlocked ? "display: block" : "display: none"}>
-			<section class="admin-dashboard" style="border-bottom-color: #222;">
-				<h1>THE ALPHA ARCHIVE</h1>
-				<p class="admin-subtitle">ACCESS GRANTED • CROSS-VAULT CURATION ACTIVE</p>
-			</section>
-		</div>
-		<div id="locked-header" style={!isUnlocked ? "display: block" : "display: none"}>
-			<LandingHero />
-		</div>
-	)}
+	</div>
+	
+	<div id="locked-header" style={!isUnlocked ? "display: block" : "display: none"}>
+		<LandingHero />
+	</div>
 
-	<section class="laboratory-layout">
-		{/* THE CUSTODIAN: Vault Sidebar */}
-		<aside class="vault-directory">
-			<h2 class="sidebar-label">DIRECTORY</h2>
-			<nav class="vault-nav">
-				<button class="vault-trigger active" data-vault="all">00_FULL_STREAM</button>
-				{vaults.map((vault, i) => (
-					<button class="vault-trigger" data-vault={vault}>
-						{String(i + 1).padStart(2, '0')}_{vault.toUpperCase().replace(/\s+/g, '_')}
+	<div class="spatial-canvas" id="canvas">
+		{/* THE DOCK: Adding Vaults */}
+		<div class="vault-dock">
+			<span class="dock-label">VAULT_DOCK</span>
+			<div class="dock-controls">
+				{vaultMap.map((v, i) => (
+					<button class="dock-item add-vault-trigger" data-vault={JSON.stringify(v)}>
+						{String(i + 1).padStart(2, '0')}_{v.name.toUpperCase()}
 					</button>
 				))}
-			</nav>
-
-			{/* THE WORKBENCH: Active Stacking Lab */}
-			<div class="stacking-lab" id="stacking-lab">
-				<div class="lab-header">
-					<span class="lab-label">ACTIVE_WORKBENCH</span>
-					<span class="node-count" id="lab-count">0 NODES</span>
-				</div>
-				<div class="lab-slots" id="lab-slots">
-					{/* Stacked nodes appear here */}
-					<div class="empty-slot-msg">NO NODES STACKED. ENGAGE [STACK] TO CURATE ACROSS VAULTS.</div>
-				</div>
-				<button class="finalize-btn" id="finalize-stack">BUILD_SYSTEM_BLUEPRINT</button>
 			</div>
-		</aside>
+		</div>
 
-		{/* THE GRID: Node Explorer */}
-		<div class="node-explorer">
-			<h2 class="section-label" id="feed-label">{isAdmin ? 'SYSTEM_VIEW_ACTIVE' : (isUnlocked ? 'VAULT_EXPLORER' : 'ALPHA_STREAM')}</h2>
-			
-			<div class="nodes-grid" id="main-grid">
-			{productsWithImages.map((product, index) => {
-				const signal = getSignalData(product.data.trendScore, product.data.status);
-				return (
-				<div 
-					class={`node-unit ${index >= 6 ? 'locked-node' : 'rarity-node'}`}
-					data-category={product.data.category?.[0] || 'ESSENTIAL'}
-					style={`animation-delay: ${index * 0.05}s; ${(index >= 6 && !isAdmin && !isUnlocked) ? 'display: none' : 'display: block'}`}
-					key={product.data.id}
-				>
+		{/* THE WORKSPACE: Elements appear here */}
+		<div class="workspace-area" id="workspace">
+			<div class="canvas-empty-state" id="empty-state">
+				<p>CANVAS_NULL. ENGAGE VAULT FROM DOCK TO INITIALIZE CURATION.</p>
+			</div>
+		</div>
+	</div>
+</MainLayout>
+
+<script>
+	const initSpatialUI = () => {
+		const workspace = document.getElementById('workspace');
+		const emptyState = document.getElementById('empty-state');
+		const haptic = (ms = 10) => { if ('vibrate' in navigator) navigator.vibrate(ms); };
+
+		// Template for a Spun-up Node Card
+		const createNodeHTML = (product: any, isStacked = false) => {
+			const signal = (product.trendScore >= 7 ? 3 : (product.trendScore >= 4 ? 2 : 1));
+			const barColor = '#00ff88';
+
+			return `
+				<div class="node-card ${isStacked ? 'stacked-node' : 'active-node'}">
 					<div class="card-flipper">
-						{/* FRONT FACE: Interface */}
-						<div class={`minimal-card card-face card-front ${product.data.trendScore >= 9 ? 'subtle-pulse' : ''}`}>
+						<div class="minimal-card card-face card-front">
 							<div class="visual-viewport">
-								<div class="shimmer-overlay"></div>
-								<img src={product.data.image} alt={product.data.title} loading="lazy" />
+								<img src="${product.image}" alt="${product.title}" />
 							</div>
 							<div class="card-meta-container">
 								<div class="card-meta">
-									<span class="diagnostic-tag">[{product.data.painPoint?.toUpperCase() || 'CORE_NODE'}]</span>
-									<h3>{product.data.title}</h3>
+									<span class="diagnostic-tag">[${product.painPoint?.toUpperCase() || 'CORE_NODE'}]</span>
+									<h3>${product.title}</h3>
 								</div>
 								<div class="analytics-footer">
 									<div class="signal-group">
 										<div class="signal-meter">
-											{[1, 2, 3].map(bar => (
-												<div class={`signal-bar bar-${bar} ${bar <= signal.activeBars ? 'active' : ''}`} style={bar <= signal.activeBars ? `--bar-color: ${signal.color}` : ''}></div>
-											))}
+											${[1,2,3].map(b => `<div class="signal-bar ${b <= signal ? 'active' : ''}" style="${b <= signal ? `--bar-color: ${barColor}` : ''}"></div>`).join('')}
 										</div>
-										<span class="score-value">{product.data.trendScore.toFixed(1)}</span>
+										<span class="score-value">${product.trendScore.toFixed(1)}</span>
 									</div>
 									<div class="action-group">
-										<button class="card-action info-btn" title="Blueprint">
+										<button class="card-action flip-trigger" title="Technical Specs">
 											<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
 										</button>
-										<button class="card-action stack-btn" title="Stack this Node" data-node={JSON.stringify({id: product.data.id, title: product.data.title, image: product.data.image})}>
-											STACK
+										<button class="card-action stack-trigger" title="Engage Signal / Magnet" data-node='${JSON.stringify(product)}'>
+											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<path d="M5 12V3m0 9l-2-2m2 2l2-2"/>
+												<path d="M19 12V3m0 9l-2-2m2 2l2-2"/>
+												<path d="M12 21V10m0 11l-3-3m3 3l3-3"/>
+											</svg>
 										</button>
-										<button class="card-action add-btn" data-product={JSON.stringify({id: product.data.id, title: product.data.title, priceEstimate: product.data.priceEstimate})}>
-											<svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-										</button>
+										${isStacked ? `<button class="card-action remove-node">&times;</button>` : ''}
 									</div>
 								</div>
 							</div>
 						</div>
-
-						{/* BACK FACE: Technical Data */}
 						<div class="minimal-card card-face card-back">
 							<div class="blueprint-header">
 								<span class="bp-label">TECHNICAL_SPEC</span>
-								<button class="close-flip-btn">&times;</button>
+								<button class="card-action flip-trigger">&times;</button>
 							</div>
 							<div class="blueprint-body">
-								<div class="spec-row"><span class="label">MODEL_ID</span><span class="val">{product.data.slug}</span></div>
-								<div class="spec-row"><span class="label">HYBRID_STACK</span><span class="val">{product.data.digitalStack}</span></div>
-								<div class="spec-row"><span class="label">TYPE</span><span class="val">{product.data.productType.toUpperCase()}</span></div>
-								<div class="blueprint-graph"><div class="grid-mesh"></div><p>{product.data.notes}</p></div>
+								<div class="spec-row"><span class="label">ID</span><span class="val">${product.slug}</span></div>
+								<div class="spec-row"><span class="label">HYBRID</span><span class="val">${product.digitalStack || 'NONE'}</span></div>
+								<div class="blueprint-graph"><div class="grid-mesh"></div><p>${product.notes || 'No lab notes.'}</p></div>
 							</div>
-							<a href={`/products/${product.data.slug}${isAdmin ? '?key=' + ADMIN_SECRET : ''}`} class="full-spec-link">OPEN_FULL_ARCHIVE</a>
+							<a href="${product.buyLink}" target="_blank" class="buy-link-back">CHECK_AMAZON_PRICE</a>
 						</div>
 					</div>
 				</div>
-			)})}
-			</div>
-
-			<div class="launch-lock" id="launch-lock-cta" style={(isAdmin || isUnlocked) ? "display: none" : "display: block"}>
-				<div class="lock-blur"></div>
-				<div class="lock-content">
-					<p>FULL STREAM CURATIONS LOCKED IN THE <span class="vault-trigger-link">VAULTS</span></p>
-					<span class="sub">JOIN THE ALPHA TO UNLOCK THE FULL STREAM</span>
-				</div>
-			</div>
-		</div>
-	</section>
-</MainLayout>
-
-<script>
-	const initInteractivity = () => {
-		const haptic = (ms = 10) => { if ('vibrate' in navigator) navigator.vibrate(ms); };
-		const isUnlocked = document.cookie.includes('ss_alpha_passport=unlocked_2026') || localStorage.getItem('ss_alpha_passport') === 'unlocked_2026';
-		const isAdmin = new URL(window.location.href).searchParams.has('key');
-
-		// 1. Vault Directory Logic (The Custodian)
-		document.querySelectorAll('.vault-trigger').forEach(trigger => {
-			trigger.addEventListener('click', () => {
-				haptic(5);
-				const vault = trigger.getAttribute('data-vault');
-				document.querySelectorAll('.vault-trigger').forEach(t => t.classList.remove('active'));
-				trigger.classList.add('active');
-				
-				document.querySelectorAll('.node-unit').forEach(node => {
-					const category = node.getAttribute('data-category');
-					const isLocked = node.classList.contains('locked-node');
-					if (vault === 'all' || category === vault) {
-						if (!isLocked || isAdmin || isUnlocked) (node as HTMLElement).style.display = 'block';
-					} else { (node as HTMLElement).style.display = 'none'; }
-				});
-			});
-		});
-
-		// 2. Stacking Lab Logic (The Workbench)
-		let activeStack: any[] = JSON.parse(sessionStorage.getItem('ss_active_stack') || '[]');
-		
-		const updateLabUI = () => {
-			const labSlots = document.getElementById('lab-slots');
-			const labCount = document.getElementById('lab-count');
-			if (!labSlots || !labCount) return;
-
-			labCount.textContent = `${activeStack.length} NODES`;
-			
-			if (activeStack.length === 0) {
-				labSlots.innerHTML = `<div class="empty-slot-msg">NO NODES STACKED. ENGAGE [STACK] TO CURATE ACROSS VAULTS.</div>`;
-			} else {
-				labSlots.innerHTML = activeStack.map(node => `
-					<div class="lab-node-pill" data-id="${node.id}">
-						<img src="${node.image}" alt="" />
-						<span class="pill-title">${node.title.split(' ').slice(0,2).join(' ')}</span>
-						<button class="remove-pill" data-id="${node.id}">&times;</button>
-					</div>
-				`).join('');
-				
-				document.querySelectorAll('.remove-pill').forEach(btn => {
-					btn.addEventListener('click', () => {
-						const id = btn.getAttribute('data-id');
-						activeStack = activeStack.filter(n => n.id !== id);
-						sessionStorage.setItem('ss_active_stack', JSON.stringify(activeStack));
-						updateLabUI();
-						haptic(5);
-					});
-				});
-			}
+			`;
 		};
 
-		document.querySelectorAll('.stack-btn').forEach(btn => {
-			btn.addEventListener('click', (e) => {
-				e.preventDefault(); e.stopPropagation();
+		// 1. Adding a Vault to Canvas
+		document.querySelectorAll('.add-vault-trigger').forEach(btn => {
+			btn.addEventListener('click', () => {
 				haptic(15);
-				const nodeData = JSON.parse(btn.getAttribute('data-node') || '{}');
+				if (emptyState) emptyState.style.display = 'none';
+				const vaultData = JSON.parse(btn.getAttribute('data-vault') || '{}');
 				
-				if (!activeStack.some(n => n.id === nodeData.id)) {
-					activeStack.push(nodeData);
-					sessionStorage.setItem('ss_active_stack', JSON.stringify(activeStack));
-					updateLabUI();
-					// Visual Feedback
-					btn.textContent = 'STACKED';
-					setTimeout(() => btn.textContent = 'STACK', 1000);
-				}
+				// Create Vault Portal
+				const vaultEl = document.createElement('div');
+				vaultEl.className = 'vault-portal';
+				vaultEl.innerHTML = `
+					<div class="vault-inner">
+						<span class="vault-id">VAULT_${vaultData.name.toUpperCase()}</span>
+						<div class="vault-info-overlay">
+							<p>CUSTODIAN OF ${vaultData.nodes.length} NODES</p>
+							<span class="sub">CLICK TO SPIN INTERFACE</span>
+						</div>
+					</div>
+					<button class="close-vault">&times;</button>
+				`;
+
+				// CLICK: Spin up the Node Card
+				vaultEl.addEventListener('click', (e) => {
+					if ((e.target as HTMLElement).classList.contains('close-vault')) return;
+					haptic(20);
+					
+					// Remove existing active node for this vault if any
+					vaultEl.querySelector('.active-node')?.remove();
+					
+					const firstProduct = vaultData.nodes[0].data;
+					const nodeCard = document.createElement('div');
+					nodeCard.className = 'node-spin-container';
+					nodeCard.innerHTML = createNodeHTML({
+						...firstProduct,
+						image: firstProduct.image,
+						trendScore: firstProduct.trendScore,
+						painPoint: firstProduct.painPoint,
+						notes: firstProduct.notes,
+						buyLink: firstProduct.buyLink,
+						slug: firstProduct.slug,
+						id: vaultData.nodes[0].id
+					});
+
+					// Logic to cycle through items
+					let currentIndex = 0;
+					nodeCard.addEventListener('wheel', (e) => {
+						e.preventDefault();
+						currentIndex = (e.deltaY > 0) ? (currentIndex + 1) % vaultData.nodes.length : (currentIndex - 1 + vaultData.nodes.length) % vaultData.nodes.length;
+						const p = vaultData.nodes[currentIndex].data;
+						nodeCard.innerHTML = createNodeHTML({
+							...p, id: vaultData.nodes[currentIndex].id
+						});
+						attachNodeListeners(nodeCard);
+					}, { passive: false });
+
+					vaultEl.appendChild(nodeCard);
+					attachNodeListeners(nodeCard);
+				});
+
+				workspace?.appendChild(vaultEl);
+				
+				vaultEl.querySelector('.close-vault')?.addEventListener('click', () => {
+					vaultEl.remove();
+					if (workspace?.children.length === 1) if (emptyState) emptyState.style.display = 'block';
+				});
 			});
 		});
 
-		// 3. Interface Actions (The Card)
-		document.querySelectorAll('.info-btn, .close-flip-btn').forEach(btn => {
-			btn.addEventListener('click', (e) => {
-				e.preventDefault(); e.stopPropagation();
-				haptic(15);
-				btn.closest('.node-unit')?.classList.toggle('is-flipped');
+		const attachNodeListeners = (container: HTMLElement) => {
+			// Flip
+			container.querySelectorAll('.flip-trigger').forEach(b => {
+				b.addEventListener('click', (e) => {
+					e.stopPropagation();
+					container.querySelector('.node-card')?.classList.toggle('is-flipped');
+				});
 			});
-		});
 
-		// Unlock Logic (Unchanged)
-		if (isUnlocked && !isAdmin) {
-			document.getElementById('locked-header')?.style.setProperty('display', 'none');
-			document.getElementById('unlocked-header')?.style.setProperty('display', 'block');
-			document.getElementById('launch-lock-cta')?.style.setProperty('display', 'none');
-			document.querySelectorAll('.locked-node').forEach(n => { (n as HTMLElement).style.display = 'block'; });
-		}
-
-		updateLabUI();
+			// Stack (Magnet/Antenna)
+			container.querySelectorAll('.stack-trigger').forEach(b => {
+				b.addEventListener('click', (e) => {
+					e.stopPropagation();
+					haptic(30);
+					const nodeData = JSON.parse(b.getAttribute('data-node') || '{}');
+					
+					// Create persistent card on canvas
+					const stackedCard = document.createElement('div');
+					stackedCard.className = 'stacked-card-anchor';
+					stackedCard.innerHTML = createNodeHTML(nodeData, true);
+					
+					workspace?.appendChild(stackedCard);
+					
+					stackedCard.querySelector('.remove-node')?.addEventListener('click', () => stackedCard.remove());
+					stackedCard.querySelector('.flip-trigger')?.addEventListener('click', () => {
+						stackedCard.querySelector('.node-card')?.classList.toggle('is-flipped');
+					});
+				});
+			});
+		};
 	};
 
-	initInteractivity();
-	document.addEventListener('astro:after-swap', initInteractivity);
+	initSpatialUI();
+	document.addEventListener('astro:after-swap', initSpatialUI);
 </script>
 
 <style>
-	.laboratory-layout { display: flex; gap: 4rem; margin-top: 4rem; align-items: flex-start; }
+	.spatial-canvas {
+		position: relative;
+		width: 100%;
+		height: 80vh;
+		background: radial-gradient(circle at center, #050505 0%, #000 100%);
+		border: 1px solid #111;
+		border-radius: 4px;
+		overflow: hidden;
+		margin-top: 2rem;
+	}
 
-	/* VAULT DIRECTORY (THE CUSTODIAN) */
-	.vault-directory { width: 240px; flex-shrink: 0; position: sticky; top: 10rem; height: fit-content; display: flex; flex-direction: column; gap: 4rem; }
-	.sidebar-label { font-size: 0.5rem; letter-spacing: 0.4rem; color: #222; margin-bottom: 2rem; font-weight: 900; }
-	.vault-nav { display: flex; flex-direction: column; gap: 0.8rem; }
-	.vault-trigger { background: none; border: none; color: #444; font-family: var(--family-mono, monospace); font-size: 0.6rem; text-align: left; cursor: pointer; letter-spacing: 0.1rem; transition: all 0.2s ease; padding: 0.5rem 0; border-bottom: 1px solid transparent; }
-	.vault-trigger.active { color: #00ff88; border-bottom-color: #00ff88; }
+	/* THE DOCK */
+	.vault-dock {
+		position: absolute;
+		bottom: 2rem;
+		left: 50%;
+		transform: translateX(-50%);
+		background: rgba(8,8,8,0.8);
+		backdrop-filter: blur(20px);
+		border: 1px solid #222;
+		padding: 1rem 2rem;
+		border-radius: 100px;
+		display: flex;
+		align-items: center;
+		gap: 2rem;
+		z-index: 1000;
+	}
 
-	/* STACKING LAB (THE WORKBENCH) */
-	.stacking-lab { background: #050505; border: 1px solid #111; padding: 1.5rem; border-radius: 4px; }
-	.lab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-	.lab-label { font-family: var(--family-mono, monospace); font-size: 0.45rem; color: #333; letter-spacing: 0.1rem; }
-	.node-count { font-family: var(--family-mono, monospace); font-size: 0.45rem; color: #00ff88; }
-	.lab-slots { display: flex; flex-direction: column; gap: 0.75rem; min-height: 100px; }
-	.empty-slot-msg { font-size: 0.45rem; color: #222; line-height: 1.6; font-family: var(--family-mono, monospace); }
+	.dock-label { font-family: var(--family-mono); font-size: 0.45rem; color: #444; letter-spacing: 0.2rem; }
+	.dock-controls { display: flex; gap: 1rem; }
 	
-	.lab-node-pill { display: flex; align-items: center; gap: 0.75rem; background: #080808; padding: 0.5rem; border: 1px solid #1a1a1a; border-radius: 2px; }
-	.lab-node-pill img { width: 24px; height: 24px; object-fit: cover; border-radius: 2px; filter: grayscale(1); }
-	.pill-title { font-size: 0.5rem; color: #888; font-family: var(--family-mono, monospace); flex: 1; }
-	.remove-pill { background: none; border: none; color: #333; cursor: pointer; font-size: 1rem; line-height: 1; }
-	.remove-pill:hover { color: #ff4444; }
+	.dock-item {
+		background: none;
+		border: 1px solid #222;
+		color: #888;
+		padding: 0.5rem 1rem;
+		border-radius: 100px;
+		font-family: var(--family-mono);
+		font-size: 0.55rem;
+		cursor: pointer;
+		transition: all 0.3s ease;
+	}
+	.dock-item:hover { color: #fff; border-color: #444; background: #111; }
 
-	.finalize-btn { margin-top: 1.5rem; width: 100%; padding: 0.8rem; background: #111; border: 1px solid #222; color: #444; font-size: 0.5rem; font-family: var(--family-mono, monospace); cursor: pointer; transition: all 0.3s ease; }
-	.finalize-btn:hover { background: #00ff88; color: #000; border-color: #00ff88; }
+	/* WORKSPACE */
+	.workspace-area {
+		width: 100%;
+		height: 100%;
+		padding: 4rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6rem;
+		align-items: flex-start;
+		justify-content: center;
+	}
 
-	/* NODE EXPLORER */
-	.node-explorer { flex: 1; min-width: 0; }
-	.section-label { font-size: 0.6rem; letter-spacing: 0.4rem; color: #222; margin-bottom: 4rem; font-weight: 900; }
-	.nodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 3rem; perspective: 1500px; }
-	
-	.node-unit { position: relative; min-height: 450px; transform-style: preserve-3d; }
+	.canvas-empty-state {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		color: #111;
+		font-family: var(--family-mono);
+		font-size: 0.6rem;
+		letter-spacing: 0.5rem;
+		text-align: center;
+		width: 80%;
+	}
+
+	/* VAULT PORTAL */
+	.vault-portal {
+		position: relative;
+		width: 220px;
+		height: 320px;
+		background: #050505;
+		border: 2px dashed #111;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: all 0.4s ease;
+	}
+	.vault-portal:hover { border-color: #222; background: #080808; transform: translateY(-5px); }
+
+	.vault-inner {
+		padding: 2rem;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+	.vault-id { font-family: var(--family-mono); font-size: 0.5rem; color: #222; letter-spacing: 0.1rem; }
+	.vault-info-overlay { opacity: 0.3; transition: opacity 0.3s ease; }
+	.vault-portal:hover .vault-info-overlay { opacity: 1; }
+	.vault-info-overlay p { font-size: 0.6rem; color: #444; margin-bottom: 0.5rem; }
+	.vault-info-overlay .sub { font-size: 0.45rem; color: #00ff88; font-family: var(--family-mono); }
+
+	.close-vault { position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; background: #ff4444; color: #fff; border: none; border-radius: 50%; cursor: pointer; display: none; }
+	.vault-portal:hover .close-vault { display: block; }
+
+	/* NODE SPIN (The Interface) */
+	.node-spin-container {
+		position: absolute;
+		top: -20px;
+		left: 40px;
+		width: 280px;
+		z-index: 100;
+		animation: spin-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@keyframes spin-up {
+		from { opacity: 0; transform: translateY(20px) rotateY(-20deg); }
+		to { opacity: 1; transform: translateY(0) rotateY(0); }
+	}
+
+	.stacked-card-anchor {
+		width: 280px;
+		position: relative;
+	}
+
+	/* CARD ARCHITECTURE */
+	.node-card { width: 100%; min-height: 400px; perspective: 1000px; }
 	.card-flipper { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transform-style: preserve-3d; }
-	.node-unit.is-flipped .card-flipper { transform: rotateY(180deg); }
+	.node-card.is-flipped .card-flipper { transform: rotateY(180deg); }
+	.card-face { position: absolute; inset: 0; backface-visibility: hidden; background: #080808; border: 1px solid #222; border-radius: 4px; box-shadow: 0 30px 60px rgba(0,0,0,0.8); display: flex; flex-direction: column; }
+	.card-back { transform: rotateY(180deg); background: #030303 !important; padding: 1.5rem; }
 
-	.card-face { position: absolute; inset: 0; backface-visibility: hidden; display: flex; flex-direction: column; background: #080808; border: 1px solid rgba(255,255,255,0.02); border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-	.card-back { transform: rotateY(180deg); background: #030303 !important; padding: 2rem; border-color: rgba(255,255,255,0.05); }
+	.visual-viewport { height: 180px; overflow: hidden; background: #000; border-radius: 4px 4px 0 0; }
+	img { width: 100%; height: 100%; object-fit: contain; opacity: 0.8; }
+	.card-meta-container { padding: 1.2rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+	h3 { font-size: 0.9rem; color: #fff; margin: 0.4rem 0; }
+	.diagnostic-tag { font-family: var(--family-mono); font-size: 0.45rem; color: #ff4444; font-weight: 900; }
 
-	.visual-viewport { position: relative; overflow: hidden; background: #030303; border-radius: 4px 4px 0 0; }
-	img { width: 100%; height: auto; display: block; object-fit: contain; opacity: 0.6; transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
-	.minimal-card:hover img { opacity: 0.9; transform: scale(1.05); }
+	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #111; padding-top: 1rem; }
+	.signal-meter { display: flex; gap: 2px; height: 8px; align-items: flex-end; }
+	.signal-bar { width: 2px; background: #111; }
+	.signal-bar.active { background: #00ff88; box-shadow: 0 0 5px #00ff88; }
+	.score-value { font-size: 0.5rem; color: #444; font-family: var(--family-mono); }
 
-	.card-meta-container { padding: 1.5rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-	h3 { font-size: 0.9rem; color: #fff; line-height: 1.2; margin: 0.5rem 0; letter-spacing: 0.05rem; }
-	.diagnostic-tag { font-family: var(--family-mono, monospace); font-size: 0.45rem; color: #ff4444; letter-spacing: 0.1rem; font-weight: 900; }
+	.action-group { display: flex; gap: 0.4rem; }
+	.card-action { width: 26px; height: 26px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+	.card-action:hover { background: #fff; color: #000; }
+	.stack-trigger { border-radius: 4px; padding: 0 0.5rem; width: auto; font-size: 0.4rem; font-family: var(--family-mono); font-weight: 900; }
 
-	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.02); padding-top: 1rem; }
-	.signal-group { display: flex; align-items: center; gap: 0.8rem; }
-	.signal-meter { display: flex; align-items: flex-end; gap: 2px; height: 10px; }
-	.signal-bar { width: 3px; background: #111; border-radius: 1px; }
-	.signal-bar.active { background: var(--bar-color); box-shadow: 0 0 5px var(--bar-color); }
-	.bar-1 { height: 40%; } .bar-2 { height: 70%; } .bar-3 { height: 100%; }
-	.score-value { font-size: 0.6rem; color: #666; font-weight: 900; }
+	/* BACK STYLES */
+	.blueprint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid #111; padding-bottom: 0.5rem; }
+	.bp-label { font-family: var(--family-mono); font-size: 0.45rem; color: #333; }
+	.spec-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #111; }
+	.spec-row .label { font-size: 0.4rem; color: #222; }
+	.spec-row .val { font-size: 0.4rem; color: #00ff88; font-family: var(--family-mono); }
+	.blueprint-graph { flex: 1; margin: 1rem 0; background: #050505; border: 1px solid #111; position: relative; padding: 0.8rem; overflow: hidden; }
+	.grid-mesh { position: absolute; inset: 0; background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px); background-size: 8px 8px; opacity: 0.3; }
+	.blueprint-graph p { font-size: 0.5rem; color: #666; line-height: 1.4; position: relative; z-index: 2; font-family: var(--family-mono); }
+	.buy-link-back { display: block; background: #fff; color: #000; text-align: center; padding: 0.8rem; font-size: 0.55rem; font-weight: 900; font-family: var(--family-mono); text-decoration: none; border-radius: 2px; }
 
-	.action-group { display: flex; gap: 0.5rem; align-items: center; }
-	.card-action { height: 28px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; border-radius: 2px; font-family: var(--family-mono, monospace); }
-	.info-btn { width: 28px; border-radius: 50%; }
-	.add-btn { width: 28px; }
-	.stack-btn { padding: 0 0.8rem; font-size: 0.5rem; font-weight: 900; letter-spacing: 0.1rem; }
-	
-	.card-action:hover { background: #fff; color: #000; border-color: #fff; }
-	.add-btn.added { background: #00ff88; border-color: #00ff88; color: #000; }
-
-	.collapsible-buy { overflow: hidden; display: flex; }
-	.buy-trigger { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.6rem; background: #111; border-radius: 100px; color: #fff; font-size: 0.45rem; font-weight: 900; border: 1px solid #222; text-decoration: none; }
-	.buy-label { width: 0; opacity: 0; transition: all 0.4s ease; overflow: hidden; }
-	.minimal-card:hover .buy-label { width: 30px; opacity: 1; }
-
-	/* BLUEPRINT BACK */
-	.blueprint-header { display: flex; justify-content: space-between; border-bottom: 1px solid #111; padding-bottom: 1rem; }
-	.bp-label { font-family: var(--family-mono, monospace); font-size: 0.5rem; color: #444; letter-spacing: 0.2rem; }
-	.spec-row { display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid #111; }
-	.spec-row .label { font-size: 0.4rem; color: #333; font-family: var(--family-mono, monospace); }
-	.spec-row .val { font-size: 0.4rem; color: #00ff88; font-family: var(--family-mono, monospace); text-align: right; max-width: 60%; }
-	.blueprint-graph { flex: 1; margin: 1.5rem 0; position: relative; background: #050505; border: 1px solid #111; padding: 1rem; overflow: hidden; }
-	.grid-mesh { position: absolute; inset: 0; background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px); background-size: 10px 10px; opacity: 0.5; }
-	.blueprint-graph p { font-size: 0.55rem; color: #666; line-height: 1.5; position: relative; z-index: 2; font-family: var(--family-mono, monospace); }
-	.full-spec-link { display: block; padding: 0.8rem; background: #00ff88; color: #000; text-align: center; font-size: 0.6rem; font-weight: 900; text-decoration: none; }
-
-	/* Gating / Shield */
-	.admin-dashboard { padding: 8rem 0 4rem 0; text-align: center; border-bottom: 1px solid #111; }
-	.vitals-bar { display: inline-flex; gap: 2rem; padding: 1rem 2rem; background: #080808; border: 1px solid #111; border-radius: 4px; margin-bottom: 2rem; }
-	.launch-lock { position: relative; margin-top: -8rem; padding: 12rem 0; text-align: center; z-index: 10; }
-	.lock-blur { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, #000 70%); backdrop-filter: blur(10px); }
+	/* LAB DASHBOARD */
+	.lab-dashboard { padding: 8rem 0 4rem 0; text-align: center; border-bottom: 1px solid #111; }
+	.admin-subtitle { font-size: 0.6rem; letter-spacing: 0.3rem; color: #444; font-weight: 900; }
+	h1 { font-size: 3rem; letter-spacing: -0.1rem; color: #fff; }
 </style>
