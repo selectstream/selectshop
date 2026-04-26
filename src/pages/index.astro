@@ -13,173 +13,201 @@ const isUnlocked = cookiePassport === 'unlocked_2026';
 
 const products = await getCollection('products') || [];
 const productsWithImages = products.filter(p => p.data.image && p.data.image.length > 5);
+const sortedProducts = productsWithImages.sort((a, b) => b.data.trendScore - a.data.trendScore);
 
-// Vault Data (The Custodians)
-const vaultCategories = [...new Set(productsWithImages.map(p => p.data.category?.[0] || 'ESSENTIAL'))].sort();
-const vaultMap = vaultCategories.map(cat => ({
-	name: cat,
-	nodes: productsWithImages.filter(p => p.data.category?.[0] === cat)
-}));
+// Vault Categories (The Custodians)
+const vaults = [...new Set(sortedProducts.map(p => p.data.category?.[0] || 'ESSENTIAL'))].sort();
+
+// Helper for dynamic signal meter
+const getSignalData = (score: number, status: string) => {
+	const activeBars = score >= 7 ? 3 : (score >= 4 ? 2 : 1);
+	const color = status === 'Live' ? '#00ff88' : '#ff4444';
+	return { activeBars, color };
+};
 ---
 
-<MainLayout title="SelectStream | Archive">
-	<div id="unlocked-header" style={isUnlocked ? "display: block" : "display: none"}>
-		<section class="lab-dashboard">
-			<div class="vitals-minimal">
-				<span>v1.9.0_REFINED</span>
-				<span>{productsWithImages.length} NODES_ONLINE</span>
+<MainLayout title="SelectStream | Deep Work Archive">
+	{isAdmin ? (
+		<section class="admin-dashboard">
+			<div class="vitals-bar">
+				<div class="vital-item"><span class="label">ALPHA SUBS</span><span class="value">{stats.subscribers}</span></div>
+				<div class="vital-item"><span class="label">SYSTEM STATUS</span><span class="value pulse">OPERATIONAL</span></div>
 			</div>
-			<h1>SELECTSTREAM_ARCHIVE</h1>
+			<h1>PRODUCTION_NODE_STREAM</h1>
 		</section>
-	</div>
-	
-	<div id="locked-header" style={!isUnlocked ? "display: block" : "display: none"}>
-		<LandingHero />
-	</div>
-
-	<div class="archive-container">
-		<div class="vaults-grid" id="vaults-grid">
-			{vaultMap.map((v, i) => (
-				<div class="vault-box-unit" data-vault={JSON.stringify(v)}>
-					<div class="vault-box">
-						<div class="box-face box-top"></div>
-						<div class="box-content">
-							<span class="box-serial">S/N_{v.name.toUpperCase().substring(0,4)}</span>
-							<h2 class="box-title">{v.name.toUpperCase()}</h2>
-							<div class="box-stats">
-								<span>NODES: {v.nodes.length}</span>
-								<span class="pulse-dot"></span>
-							</div>
-						</div>
-					</div>
-					<div class="vault-interface-slot"></div>
-				</div>
-			))}
+	) : (
+		<div id="unlocked-header" style={isUnlocked ? "display: block" : "display: none"}>
+			<section class="admin-dashboard" style="border-bottom-color: #222;">
+				<h1>THE ALPHA ARCHIVE</h1>
+				<p class="admin-subtitle">ACCESS GRANTED • FOCUS INFRASTRUCTURE SYNCED</p>
+			</section>
 		</div>
-
-		<div class="stacked-systems-area">
-			<h2 class="section-label" id="stack-label" style="display: none;">CURATED_SYSTEM_STACK</h2>
-			<div class="stacked-grid" id="stacked-grid"></div>
+		<div id="locked-header" style={!isUnlocked ? "display: block" : "display: none"}>
+			<LandingHero />
 		</div>
-	</div>
-</MainLayout>
+	)}
 
-<script>
-	const initArchiveUI = () => {
-		const haptic = (ms = 10) => { if ('vibrate' in navigator) navigator.vibrate(ms); };
+	<section class="archive-layout">
+		{/* THE CUSTODIAN: Vault Sidebar */}
+		<aside class="vault-sidebar">
+			<h2 class="sidebar-label">VAULT_DIRECTORY</h2>
+			<nav class="vault-nav">
+				<button class="vault-link active" data-vault="all">00_FULL_STREAM</button>
+				{vaults.map((vault, i) => (
+					<button class="vault-link" data-vault={vault}>
+						{String(i + 1).padStart(2, '0')}_{vault.toUpperCase().replace(/\s+/g, '_')}
+					</button>
+				))}
+			</nav>
+		</aside>
 
-		const createNodeHTML = (product: any, isStacked = false) => {
-			const signal = (product.trendScore >= 7 ? 3 : (product.trendScore >= 4 ? 2 : 1));
-			return `
-				<div class="node-card ${isStacked ? 'stacked-node' : 'active-node'}">
+		{/* THE PRODUCT GRID: High-Visibility Nodes */}
+		<div class="stream-container">
+			<h2 class="section-label" id="feed-label">{isAdmin ? 'SYSTEM_INTEGRITY_VIEW' : (isUnlocked ? 'VAULT_EXPLORER' : 'ALPHA_NODES')}</h2>
+			
+			<div class="nodes-grid" id="main-grid">
+			{sortedProducts.map((product, index) => {
+				const signal = getSignalData(product.data.trendScore, product.data.status);
+				return (
+				<div 
+					class={`node-unit ${index >= 6 ? 'locked-node' : 'rarity-node'}`}
+					data-category={product.data.category?.[0] || 'ESSENTIAL'}
+					style={`animation-delay: ${index * 0.05}s; ${(index >= 6 && !isAdmin && !isUnlocked) ? 'display: none' : 'display: block'}`}
+					key={product.data.id}
+				>
 					<div class="card-flipper">
-						<div class="minimal-card card-face card-front">
+						{/* FRONT: High-Fidelity Interface */}
+						<div class={`minimal-card card-face card-front ${product.data.trendScore >= 9 ? 'subtle-pulse' : ''}`}>
 							<div class="visual-viewport">
-								<img src="${product.image}" alt="${product.title}" />
+								<div class="shimmer-overlay"></div>
+								<img src={product.data.image} alt={product.data.title} loading="lazy" />
 							</div>
 							<div class="card-meta-container">
 								<div class="card-meta">
-									<span class="diagnostic-tag">[${product.painPoint?.toUpperCase() || 'CORE_NODE'}]</span>
-									<h3>${product.title}</h3>
+									<span class="diagnostic-tag">[{product.data.painPoint?.toUpperCase() || 'CORE_NODE'}]</span>
+									<h3>{product.data.title}</h3>
 								</div>
 								<div class="analytics-footer">
 									<div class="signal-group">
 										<div class="signal-meter">
-											${[1,2,3].map(b => `<div class="signal-bar ${b <= signal ? 'active' : ''}"></div>`).join('')}
+											{[1, 2, 3].map(bar => (
+												<div class={`signal-bar bar-${bar} ${bar <= signal.activeBars ? 'active' : ''}`} style={bar <= signal.activeBars ? `--bar-color: ${signal.color}` : ''}></div>
+											))}
 										</div>
-										<span class="score-value">${product.trendScore.toFixed(1)} SIGNAL</span>
+										<span class="score-value">{product.data.trendScore.toFixed(1)} SIGNAL</span>
 									</div>
 									<div class="action-group">
-										<button class="card-action flip-trigger" title="Specs">
+										<button class="card-action flip-trigger" title="Blueprint">
 											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
 										</button>
-										<button class="card-action stack-trigger" title="Stack this Node" data-node='${JSON.stringify(product)}'>
+										<button class="card-action stack-btn" title="Stack (Magnet)" data-node={JSON.stringify({id: product.data.id, title: product.data.title, image: product.data.image, trendScore: product.data.trendScore, painPoint: product.data.painPoint})}>
 											<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-												<path d="M5 12V3m0 9l-2-2m2 2l2-2"/>
-												<path d="M19 12V3m0 9l-2-2m2 2l2-2"/>
-												<path d="M12 21V10m0 11l-3-3m3 3l3-3"/>
+												<path d="M5 12V3m0 9l-2-2m2 2l2-2"/><path d="M19 12V3m0 9l-2-2m2 2l2-2"/><path d="M12 21V10m0 11l-3-3m3 3l3-3"/>
 											</svg>
 										</button>
-										<button class="card-action add-btn" data-product='${JSON.stringify(product)}'>
+										<button class="card-action add-btn" data-product={JSON.stringify({id: product.data.id, title: product.data.title})}>
 											<svg width="14" height="14" viewBox="0 0 12 12"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
 										</button>
-										${isStacked ? `<button class="card-action remove-node">&times;</button>` : ''}
 									</div>
 								</div>
 							</div>
 						</div>
+
+						{/* BACK: Technical Spec */}
 						<div class="minimal-card card-face card-back">
 							<div class="blueprint-header">
 								<span class="bp-label">TECHNICAL_SPEC</span>
 								<button class="card-action flip-trigger">&times;</button>
 							</div>
 							<div class="blueprint-body">
-								<div class="spec-row"><span class="label">ID</span><span class="val">${product.slug}</span></div>
-								<div class="spec-row"><span class="label">HYBRID</span><span class="val">${product.digitalStack || 'NONE'}</span></div>
-								<div class="blueprint-graph"><div class="grid-mesh"></div><p>${product.notes || 'No lab notes.'}</p></div>
+								<div class="spec-row"><span class="label">ID</span><span class="val">{product.data.slug}</span></div>
+								<div class="spec-row"><span class="label">HYBRID_STACK</span><span class="val">{product.data.digitalStack || 'PENDING'}</span></div>
+								<div class="spec-row"><span class="label">TYPE</span><span class="val">{product.data.productType.toUpperCase()}</span></div>
+								<div class="blueprint-graph"><div class="grid-mesh"></div><p>{product.data.notes}</p></div>
 							</div>
-							<a href="${product.buyLink}" target="_blank" class="buy-link-back">CHECK_AMAZON_PRICE</a>
+							<a href={product.data.buyLink} target="_blank" class="full-spec-link">CHECK_OFFERS</a>
 						</div>
 					</div>
 				</div>
-			`;
-		};
+			)})}
+			</div>
+		</div>
+	</section>
+</MainLayout>
 
-		document.querySelectorAll('.vault-box-unit').forEach(unit => {
-			const box = unit.querySelector('.vault-box');
-			const slot = unit.querySelector('.vault-interface-slot');
-			const vaultData = JSON.parse(unit.getAttribute('data-vault') || '{}');
-			
-			box?.addEventListener('click', () => {
-				haptic(20);
-				if (slot?.innerHTML) {
-					slot.innerHTML = ''; // Toggle off
-					return;
-				}
+<script>
+	const initArchiveUI = () => {
+		const haptic = (ms = 10) => { if ('vibrate' in navigator) navigator.vibrate(ms); };
+		const isUnlocked = document.cookie.includes('ss_alpha_passport=unlocked_2026') || localStorage.getItem('ss_alpha_passport') === 'unlocked_2026';
+		const isAdmin = new URL(window.location.href).searchParams.has('key');
 
-				// Reset other interfaces
-				document.querySelectorAll('.vault-interface-slot').forEach(s => s.innerHTML = '');
-
-				let idx = 0;
-				const render = (p: any) => {
-					if (slot) {
-						slot.innerHTML = createNodeHTML(p);
-						attachNodeListeners(slot as HTMLElement);
-					}
-				};
-
-				render(vaultData.nodes[idx].data);
-
-				slot?.addEventListener('wheel', (e) => {
-					e.preventDefault();
-					idx = (e.deltaY > 0) ? (idx + 1) % vaultData.nodes.length : (idx - 1 + vaultData.nodes.length) % vaultData.nodes.length;
-					render(vaultData.nodes[idx].data);
-				}, { passive: false });
+		// 1. Vault Filtering
+		document.querySelectorAll('.vault-link').forEach(link => {
+			link.addEventListener('click', () => {
+				haptic(5);
+				const vault = link.getAttribute('data-vault');
+				document.querySelectorAll('.vault-link').forEach(l => l.classList.remove('active'));
+				link.classList.add('active');
+				document.querySelectorAll('.node-unit').forEach(node => {
+					const category = node.getAttribute('data-category');
+					const isLocked = node.classList.contains('locked-node');
+					if (vault === 'all' || category === vault) {
+						if (!isLocked || isAdmin || isUnlocked) (node as HTMLElement).style.display = 'block';
+					} else { (node as HTMLElement).style.display = 'none'; }
+				});
 			});
 		});
 
-		const attachNodeListeners = (container: HTMLElement) => {
-			container.querySelectorAll('.flip-trigger').forEach(b => b.addEventListener('click', (e) => {
-				e.stopPropagation(); container.querySelector('.node-card')?.classList.toggle('is-flipped');
-			}));
+		// 2. Card Actions (Flip, Stack, Add)
+		document.querySelectorAll('.flip-trigger').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				e.preventDefault(); e.stopPropagation(); haptic(15);
+				btn.closest('.node-unit')?.classList.toggle('is-flipped');
+			});
+		});
 
-			container.querySelectorAll('.stack-trigger').forEach(b => b.addEventListener('click', (e) => {
-				e.stopPropagation(); haptic(30);
-				const nodeData = JSON.parse(b.getAttribute('data-node') || '{}');
-				const stackedGrid = document.getElementById('stacked-grid');
-				const stackLabel = document.getElementById('stack-label');
+		// Stacking Magnet Visual Feedback
+		document.querySelectorAll('.stack-btn').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				e.preventDefault(); e.stopPropagation(); haptic(25);
+				const node = JSON.parse(btn.getAttribute('data-node') || '{}');
+				window.dispatchEvent(new CustomEvent('add-to-setup', { detail: node }));
 				
-				if (stackLabel) stackLabel.style.display = 'block';
-				
-				const stackedUnit = document.createElement('div');
-				stackedUnit.className = 'stacked-card-unit';
-				stackedUnit.innerHTML = createNodeHTML(nodeData, true);
-				stackedGrid?.appendChild(stackedUnit);
-				
-				stackedUnit.querySelector('.remove-node')?.addEventListener('click', () => stackedUnit.remove());
-				stackedUnit.querySelector('.flip-trigger')?.addEventListener('click', () => stackedUnit.querySelector('.node-card')?.classList.toggle('is-flipped'));
-			}));
+				// Magnet Snap Feedback
+				btn.classList.add('engaged');
+				setTimeout(() => btn.classList.remove('engaged'), 500);
+			});
+		});
+
+		// 3. Setup Persistence Sync
+		const updateAddBtn = (items: any[]) => {
+			document.querySelectorAll('.add-btn').forEach(btn => {
+				const id = JSON.parse(btn.getAttribute('data-product') || '{}').id;
+				const inSetup = items.some(i => i.id === id);
+				btn.classList.toggle('added', inSetup);
+				btn.innerHTML = inSetup ? '<svg width="14" height="14" viewBox="0 0 12 12"><path d="M2 6L5 9L10 3" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<svg width="14" height="14" viewBox="0 0 12 12"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>';
+			});
 		};
+
+		updateAddBtn(JSON.parse(localStorage.getItem('selectstream_setup') || '[]'));
+		window.addEventListener('setup-updated', (e:any) => updateAddBtn(e.detail));
+		
+		document.querySelectorAll('.add-btn').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				e.preventDefault(); e.stopPropagation(); haptic(10);
+				const p = JSON.parse(btn.getAttribute('data-product') || '{}');
+				const setup = JSON.parse(localStorage.getItem('selectstream_setup') || '[]');
+				const inSetup = setup.some((i:any) => i.id === p.id);
+				window.dispatchEvent(new CustomEvent(inSetup ? 'remove-from-setup' : 'add-to-setup', { detail: inSetup ? p.id : p }));
+			});
+		});
+
+		// Unlock Reveal
+		if (isUnlocked && !isAdmin) {
+			document.getElementById('unlocked-header')?.style.setProperty('display', 'block');
+			document.getElementById('locked-header')?.style.setProperty('display', 'none');
+			document.querySelectorAll('.locked-node').forEach(n => { (n as HTMLElement).style.display = 'block'; });
+		}
 	};
 
 	initArchiveUI();
@@ -187,95 +215,72 @@ const vaultMap = vaultCategories.map(cat => ({
 </script>
 
 <style>
-	.archive-container { max-width: 1400px; margin: 4rem auto; padding: 0 2rem; }
+	.archive-layout { display: flex; gap: 5rem; max-width: 1500px; margin: 6rem auto; padding: 0 2rem; align-items: flex-start; }
 
-	/* VAULT BOX GRID */
-	.vaults-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-		gap: 6rem;
-		margin-bottom: 8rem;
-	}
+	/* VAULT SIDEBAR */
+	.vault-sidebar { width: 240px; flex-shrink: 0; position: sticky; top: 10rem; }
+	.sidebar-label { font-size: 0.5rem; letter-spacing: 0.4rem; color: #222; margin-bottom: 3rem; font-weight: 900; font-family: var(--family-mono); }
+	.vault-nav { display: flex; flex-direction: column; gap: 1rem; }
+	.vault-link { background: none; border: none; color: #444; font-family: var(--family-mono); font-size: 0.65rem; text-align: left; cursor: pointer; letter-spacing: 0.1rem; transition: all 0.2s ease; padding: 0.6rem 0; border-bottom: 1px solid transparent; }
+	.vault-link.active { color: #00ff88; border-bottom-color: #00ff88; }
+	.vault-link:hover { color: #fff; }
 
-	.vault-box-unit { position: relative; display: flex; flex-direction: column; align-items: center; }
-
-	.vault-box {
-		width: 100%;
-		height: 400px;
-		background: #050505;
-		border: 1px solid #1a1a1a;
-		border-top: 4px solid #222;
-		cursor: pointer;
-		transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-	}
-	.vault-box:hover { border-color: #333; transform: translateY(-5px); box-shadow: 0 40px 80px rgba(0,0,0,0.9); }
-
-	.box-face { position: absolute; top: -12px; left: -1px; right: -1px; height: 12px; background: #111; transform: skewX(-45deg); transform-origin: bottom; }
-	.box-content { padding: 3rem 2rem; height: 100%; display: flex; flex-direction: column; }
-	.box-serial { font-family: var(--family-mono); font-size: 0.5rem; color: #222; margin-bottom: 1rem; }
-	.box-title { font-size: 1.4rem; color: #fff; font-weight: 900; letter-spacing: -0.05rem; margin-bottom: auto; }
-	.box-stats { display: flex; justify-content: space-between; align-items: center; font-family: var(--family-mono); font-size: 0.55rem; color: #444; }
-	.pulse-dot { width: 6px; height: 6px; background: #00ff88; border-radius: 50%; box-shadow: 0 0 10px #00ff88; animation: blink 2s infinite; }
-	@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-
-	/* INTERFACE SLOT */
-	.vault-interface-slot {
-		position: absolute;
-		top: -20px;
-		left: 0;
-		width: 100%;
-		z-index: 100;
-		pointer-events: none;
-	}
-	.vault-interface-slot :global(.node-card) { pointer-events: auto; animation: spin-up 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-
-	@keyframes spin-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+	/* GRID CONTAINER */
+	.stream-container { flex: 1; min-width: 0; }
+	.section-label { font-size: 0.6rem; letter-spacing: 0.4rem; color: #222; margin-bottom: 5rem; font-weight: 900; }
+	.nodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 4rem; perspective: 1500px; }
 
 	/* CARD FIDELITY */
-	.node-card { width: 100%; min-height: 480px; perspective: 2000px; }
-	.card-flipper { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transform-style: preserve-3d; }
-	.node-card.is-flipped .card-flipper { transform: rotateY(180deg); }
+	.node-unit { position: relative; min-height: 520px; transform-style: preserve-3d; opacity: 0; transform: translateY(20px); animation: reveal 0.8s forwards; }
+	@keyframes reveal { to { opacity: 1; transform: translateY(0); } }
 
-	.card-face { position: absolute; inset: 0; backface-visibility: hidden; background: #0a0a0a; border: 1px solid #333; border-radius: 2px; box-shadow: 0 50px 100px rgba(0,0,0,1); display: flex; flex-direction: column; overflow: hidden; }
+	.card-flipper { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transform-style: preserve-3d; }
+	.node-unit.is-flipped .card-flipper { transform: rotateY(180deg); }
+
+	.card-face { position: absolute; inset: 0; backface-visibility: hidden; background: #080808; border: 1px solid #1a1a1a; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; }
+	.card-face:hover { border-color: #333; box-shadow: 0 40px 80px rgba(0,0,0,0.9); }
 	.card-back { transform: rotateY(180deg); background: #030303 !important; padding: 2.5rem; }
 
-	.visual-viewport { height: 240px; background: #000; display: flex; align-items: center; justify-content: center; }
-	img { width: 100%; height: 100%; object-fit: contain; }
+	.visual-viewport { height: 280px; background: #000; overflow: hidden; position: relative; }
+	img { width: 100%; height: 100%; object-fit: contain; opacity: 0.7; transition: all 0.6s ease; }
+	.card-face:hover img { opacity: 1; transform: scale(1.05); }
 
 	.card-meta-container { padding: 2rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-	h3 { font-size: 1.4rem; color: #fff; font-weight: 900; line-height: 1.1; margin: 0.5rem 0; letter-spacing: -0.02rem; }
+	h3 { font-size: 1.3rem; color: #fff; font-weight: 900; line-height: 1.1; margin: 0.6rem 0; letter-spacing: -0.02rem; }
 	.diagnostic-tag { font-family: var(--family-mono); font-size: 0.55rem; color: #ff4444; font-weight: 900; letter-spacing: 0.15rem; }
 
 	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1a1a1a; padding-top: 1.5rem; }
 	.signal-meter { display: flex; gap: 4px; height: 12px; align-items: flex-end; }
 	.signal-bar { width: 4px; background: #111; border-radius: 1px; }
 	.signal-bar.active { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
-	.score-value { font-size: 0.6rem; color: #666; font-family: var(--family-mono); font-weight: 900; }
+	.score-value { font-size: 0.6rem; color: #444; font-family: var(--family-mono); font-weight: 900; }
 
-	.action-group { display: flex; gap: 0.8rem; }
-	.card-action { width: 36px; height: 36px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+	/* ACTIONS */
+	.action-group { display: flex; gap: 0.75rem; align-items: center; }
+	.card-action { width: 38px; height: 38px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
 	.card-action:hover { background: #fff; color: #000; border-color: #fff; transform: translateY(-2px); }
-	.stack-trigger { color: #00ff88; border-color: #00ff88; width: auto; padding: 0 0.8rem; font-size: 0.5rem; font-family: var(--family-mono); font-weight: 900; }
-	.remove-node { background: #ff4444; border-color: #ff4444; font-size: 1.2rem; }
+	
+	.stack-btn.engaged { color: #00ff88; border-color: #00ff88; background: rgba(0,255,136,0.05); animation: snap 0.3s ease; }
+	@keyframes snap { 50% { transform: scale(1.2); } }
 
-	/* STACKED SYSTEM AREA */
-	.section-label { font-size: 0.6rem; letter-spacing: 0.4rem; color: #222; margin: 6rem 0 3rem 0; font-weight: 900; text-align: center; border-top: 1px solid #111; padding-top: 4rem; }
-	.stacked-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 4rem; padding-bottom: 12rem; }
+	.add-btn.added { background: #00ff88; border-color: #00ff88; color: #000; }
 
 	/* BLUEPRINT BACK */
-	.blueprint-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-	.bp-label { font-family: var(--family-mono); font-size: 0.6rem; color: #444; letter-spacing: 0.3rem; }
+	.bp-label { font-family: var(--family-mono); font-size: 0.6rem; color: #444; letter-spacing: 0.3rem; margin-bottom: 2rem; display: block; }
 	.spec-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid #111; }
-	.spec-row .label { font-size: 0.5rem; color: #333; }
-	.spec-row .val { font-size: 0.5rem; color: #00ff88; font-family: var(--family-mono); }
+	.spec-row .label { font-size: 0.5rem; color: #333; font-family: var(--family-mono); }
+	.spec-row .val { font-size: 0.5rem; color: #00ff88; font-family: var(--family-mono); text-align: right; max-width: 60%; }
 	.blueprint-graph { flex: 1; margin: 2rem 0; background: #050505; border: 1px solid #111; position: relative; padding: 1.5rem; overflow: hidden; }
 	.grid-mesh { position: absolute; inset: 0; background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px); background-size: 10px 10px; opacity: 0.4; }
-	.blueprint-graph p { font-size: 0.65rem; color: #888; line-height: 1.6; position: relative; z-index: 2; font-family: var(--family-mono); }
+	.blueprint-graph p { font-size: 0.6rem; color: #666; line-height: 1.6; position: relative; z-index: 2; font-family: var(--family-mono); }
+	.full-spec-link, .full-spec-link:visited, .full-spec-link:active, .full-spec-link:hover { color: inherit; text-decoration: none; }
 	.buy-link-back { display: block; background: #fff; color: #000; text-align: center; padding: 1.2rem; font-size: 0.7rem; font-weight: 900; font-family: var(--family-mono); text-decoration: none; border-radius: 2px; }
 
 	/* DASHBOARD */
 	.lab-dashboard { padding: 8rem 0 4rem 0; text-align: center; border-bottom: 1px solid #111; }
-	.vitals-minimal { display: flex; justify-content: center; gap: 4rem; margin-bottom: 2rem; font-family: var(--family-mono); font-size: 0.45rem; color: #333; letter-spacing: 0.2rem; }
-	h1 { font-size: 4rem; letter-spacing: -0.1rem; color: #fff; font-weight: 900; }
+	.vitals-bar { display: inline-flex; gap: 3rem; padding: 1.2rem 2.5rem; background: #080808; border: 1px solid #111; border-radius: 4px; margin-bottom: 2rem; }
+	.vital-item { display: flex; flex-direction: column; align-items: center; }
+	.vital-item .label { font-size: 0.45rem; color: #333; letter-spacing: 0.15rem; }
+	.vital-item .value { font-family: var(--family-mono); font-size: 0.8rem; color: #fff; }
+	h1 { font-size: 4.5rem; letter-spacing: -0.2rem; color: #fff; font-weight: 900; }
 </style>
