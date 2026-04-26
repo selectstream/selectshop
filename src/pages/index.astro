@@ -11,7 +11,7 @@ const isAdmin = providedKey === ADMIN_SECRET;
 const cookiePassport = Astro.cookies.get('ss_alpha_passport')?.value;
 const isUnlocked = cookiePassport === 'unlocked_2026';
 
-// Equity Metrics (Admin Only - Fixed Crash)
+// Equity Metrics (Admin Only)
 let stats = { subscribers: 0, setups: 0 };
 if (isAdmin) {
 	const notion = new Client({ auth: process.env.NOTION_TOKEN });
@@ -42,7 +42,7 @@ const getSignalData = (score: number, status: string) => {
 };
 ---
 
-<MainLayout title="SelectStream | Archive">
+<MainLayout title="SelectStream | Deep Work Archive">
 	{isAdmin ? (
 		<section class="admin-dashboard">
 			<div class="vitals-bar">
@@ -76,7 +76,6 @@ const getSignalData = (score: number, status: string) => {
 				))}
 			</nav>
 			
-			{/* THE WORKBENCH: Session Curation */}
 			<div class="stacking-workbench" id="workbench">
 				<span class="lab-label">SYSTEM_WORKBENCH</span>
 				<div class="workbench-slots" id="workbench-slots">
@@ -85,7 +84,7 @@ const getSignalData = (score: number, status: string) => {
 			</div>
 		</aside>
 
-		{/* THE GRID: High-Visibility Nodes */}
+		{/* THE PRODUCT GRID */}
 		<div class="stream-container">
 			<h2 class="section-label" id="feed-label">{isAdmin ? 'SYSTEM_VIEW' : (isUnlocked ? 'VAULT_EXPLORER' : 'ALPHA_STREAM')}</h2>
 			
@@ -128,6 +127,15 @@ const getSignalData = (score: number, status: string) => {
 												<path d="M5 12V3m0 9l-2-2m2 2l2-2"/><path d="M19 12V3m0 9l-2-2m2 2l2-2"/><path d="M12 21V10m0 11l-3-3m3 3l3-3"/>
 											</svg>
 										</button>
+										
+										{/* RESTORED PRICE BUTTON */}
+										<div class="collapsible-buy">
+											<a href={product.data.buyLink} target="_blank" class="buy-trigger">
+												<span class="buy-label">PRICE</span>
+												<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+											</a>
+										</div>
+
 										<button class="card-action add-btn" data-product={JSON.stringify({id: product.data.id, title: product.data.title})}>
 											<svg width="14" height="14" viewBox="0 0 12 12"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
 										</button>
@@ -189,7 +197,7 @@ const getSignalData = (score: number, status: string) => {
 			});
 		});
 
-		// 3. Stacking Logic (Workbench)
+		// 3. Stacking Logic
 		let activeStack: any[] = JSON.parse(sessionStorage.getItem('ss_active_stack') || '[]');
 		const updateWorkbench = () => {
 			const slots = document.getElementById('workbench-slots');
@@ -226,7 +234,7 @@ const getSignalData = (score: number, status: string) => {
 			});
 		});
 
-		// 4. Setup Persistence (Add Button)
+		// 4. Setup Persistence
 		const updateAddBtn = (items: any[]) => {
 			document.querySelectorAll('.add-btn').forEach(btn => {
 				const id = JSON.parse(btn.getAttribute('data-product') || '{}').id;
@@ -286,7 +294,7 @@ const getSignalData = (score: number, status: string) => {
 	.nodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 4rem; perspective: 1500px; }
 
 	/* CARD */
-	.node-unit { position: relative; min-height: 520px; transform-style: preserve-3d; opacity: 0; animation: reveal 0.8s forwards; }
+	.node-unit { position: relative; min-height: 540px; transform-style: preserve-3d; opacity: 0; animation: reveal 0.8s forwards; }
 	@keyframes reveal { to { opacity: 1; transform: translateY(0); } }
 	.card-flipper { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transform-style: preserve-3d; }
 	.node-unit.is-flipped .card-flipper { transform: rotateY(180deg); }
@@ -294,27 +302,36 @@ const getSignalData = (score: number, status: string) => {
 	.card-back { transform: rotateY(180deg); background: #030303 !important; padding: 2.5rem; }
 
 	.visual-viewport { height: 280px; background: #000; display: flex; align-items: center; justify-content: center; }
-	img { width: 100%; height: 100%; object-fit: contain; opacity: 0.7; }
+	img { width: 100%; height: 100%; object-fit: contain; opacity: 0.8; }
 
-	.card-meta-container { padding: 2rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-	h3 { font-size: 1.3rem; color: #fff; font-weight: 900; line-height: 1.1; margin: 0.6rem 0; }
+	.card-meta-container { padding: 2.2rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+	h3 { font-size: 1.4rem; color: #fff; font-weight: 900; line-height: 1.1; margin: 0.6rem 0; letter-spacing: -0.01rem; }
 	.diagnostic-tag { font-family: var(--family-mono); font-size: 0.55rem; color: #ff4444; font-weight: 900; letter-spacing: 0.15rem; }
 
-	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1a1a1a; padding-top: 1.5rem; }
-	.signal-meter { display: flex; gap: 4px; height: 12px; align-items: flex-end; }
-	.signal-bar { width: 4px; background: #111; border-radius: 1px; }
-	.signal-bar.active { background: #00ff88; box-shadow: 0 0 10px #00ff88; }
-	.score-value { font-size: 0.6rem; color: #444; font-family: var(--family-mono); font-weight: 900; }
+	/* SIGNAL BARS FIXED */
+	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1a1a1a; padding-top: 1.8rem; }
+	.signal-meter { display: flex; gap: 4px; height: 14px; align-items: flex-end; }
+	.signal-bar { width: 4px; background: #111; border-radius: 1px; transition: all 0.3s ease; }
+	.bar-1 { height: 6px; } .bar-2 { height: 10px; } .bar-3 { height: 14px; }
+	.signal-bar.active { background: var(--bar-color); box-shadow: 0 0 10px var(--bar-color); }
+	.score-value { font-size: 0.65rem; color: #444; font-family: var(--family-mono); font-weight: 900; }
 
 	/* ACTIONS */
-	.action-group { display: flex; gap: 0.75rem; align-items: center; }
-	.card-action { width: 38px; height: 38px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
-	.card-action:hover { background: #fff; color: #000; border-color: #fff; }
+	.action-group { display: flex; gap: 0.8rem; align-items: center; }
+	.card-action { width: 40px; height: 40px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+	.card-action:hover { background: #fff; color: #000; border-color: #fff; transform: translateY(-2px); }
+	
+	.collapsible-buy { overflow: hidden; display: flex; }
+	.buy-trigger { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem; background: #111; border-radius: 100px; color: #fff; font-size: 0.55rem; font-weight: 900; border: 1px solid #222; text-decoration: none; transition: all 0.3s ease; }
+	.buy-label { width: 0; opacity: 0; transition: all 0.4s ease; overflow: hidden; }
+	.minimal-card:hover .buy-label { width: 35px; opacity: 1; }
+	.buy-trigger:hover { background: #fff; color: #000; }
+
 	.add-btn.added { background: #00ff88; border-color: #00ff88; color: #000; }
 
 	/* BACK */
 	.bp-label { font-family: var(--family-mono); font-size: 0.6rem; color: #444; letter-spacing: 0.3rem; margin-bottom: 2rem; display: block; }
-	.spec-row { display: flex; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid #111; }
+	.spec-row { display: flex; justify-content: space-between; padding: 1.2rem 0; border-bottom: 1px solid #111; }
 	.spec-row .label { font-size: 0.5rem; color: #333; font-family: var(--family-mono); }
 	.spec-row .val { font-size: 0.5rem; color: #00ff88; font-family: var(--family-mono); }
 	.blueprint-graph { flex: 1; margin: 2rem 0; background: #050505; border: 1px solid #111; position: relative; padding: 1.5rem; overflow: hidden; }
