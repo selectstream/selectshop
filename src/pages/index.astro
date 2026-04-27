@@ -11,7 +11,7 @@ const isAdmin = providedKey === ADMIN_SECRET;
 const cookiePassport = Astro.cookies.get('ss_alpha_passport')?.value;
 const isUnlocked = cookiePassport === 'unlocked_2026';
 
-// Equity Metrics (Admin Only)
+// Equity Metrics
 let stats = { subscribers: 0, setups: 0 };
 if (isAdmin) {
 	const notion = new Client({ auth: process.env.NOTION_TOKEN });
@@ -31,7 +31,7 @@ const products = await getCollection('products') || [];
 const productsWithImages = products.filter(p => p.data.image && p.data.image.length > 5);
 const sortedProducts = productsWithImages.sort((a, b) => b.data.trendScore - a.data.trendScore);
 
-// Vault Categories (The Custodians)
+// Vault Categories
 const vaults = [...new Set(sortedProducts.map(p => p.data.category?.[0] || 'ESSENTIAL'))].sort();
 
 // Helper for dynamic signal meter
@@ -55,7 +55,7 @@ const getSignalData = (score: number, status: string) => {
 		<div id="unlocked-header" style={isUnlocked ? "display: block" : "display: none"}>
 			<section class="admin-dashboard" style="border-bottom-color: #222;">
 				<h1>THE ALPHA ARCHIVE</h1>
-				<p class="admin-subtitle">ACCESS GRANTED • FOCUS INFRASTRUCTURE SYNCED</p>
+				<p class="admin-subtitle">ACCESS GRANTED • MISSION_CRITICAL_LAB_ACTIVE</p>
 			</section>
 		</div>
 		<div id="locked-header" style={!isUnlocked ? "display: block" : "display: none"}>
@@ -76,8 +76,15 @@ const getSignalData = (score: number, status: string) => {
 				))}
 			</nav>
 			
+			{/* THE WORKBENCH: Active Compatibility Lab */}
 			<div class="stacking-workbench" id="workbench">
 				<span class="lab-label">SYSTEM_WORKBENCH</span>
+				
+				<div class="integrity-report" id="lab-integrity">
+					<span class="report-label">INTEGRITY_STATUS</span>
+					<span class="report-value" id="integrity-val">IDLE</span>
+				</div>
+
 				<div class="workbench-slots" id="workbench-slots">
 					<p class="empty-msg">USE [STACK] TO PIN NODES</p>
 				</div>
@@ -104,12 +111,11 @@ const getSignalData = (score: number, status: string) => {
 							<div class="visual-viewport">
 								<img src={product.data.image} alt={product.data.title} loading="lazy" class="main-node-image" />
 								
-								{/* VARIANT NAVIGATION (GT Standard: Completeness) */}
 								{product.data.gallery && product.data.gallery.length > 0 && (
 									<div class="variant-nav">
-										<button class="variant-dot active" data-src={product.data.image} title="Primary View"></button>
-										{product.data.gallery.map((img, i) => (
-											<button class="variant-dot" data-src={img} title={`Variant ${i+1}`}></button>
+										<button class="variant-dot active" data-src={product.data.image}></button>
+										{product.data.gallery.map((img) => (
+											<button class="variant-dot" data-src={img}></button>
 										))}
 									</div>
 								)}
@@ -132,7 +138,14 @@ const getSignalData = (score: number, status: string) => {
 										<button class="card-action flip-trigger" title="Specs">
 											<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
 										</button>
-										<button class="card-action stack-btn" title="Stack (Magnet)" data-node={JSON.stringify({id: product.data.id, title: product.data.title, image: product.data.image})}>
+										<button class="card-action stack-btn" title="Stack (Magnet)" data-node={JSON.stringify({
+											id: product.data.id, 
+											title: product.data.title, 
+											image: product.data.image,
+											weight: product.data.weight,
+											weightLimit: product.data.weightLimit,
+											interfaceType: product.data.interfaceType
+										})}>
 											<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 												<path d="M5 12V3m0 9l-2-2m2 2l2-2"/><path d="M19 12V3m0 9l-2-2m2 2l2-2"/><path d="M12 21V10m0 11l-3-3m3 3l3-3"/>
 											</svg>
@@ -176,6 +189,21 @@ const getSignalData = (score: number, status: string) => {
 </MainLayout>
 
 <script>
+	// IMPORT COMPATIBILITY ENGINE LOGIC (Client-side mirror)
+	const validateStack = (nodes: any[]) => {
+		const supports = nodes.filter(n => (n.weightLimit || 0) > 0);
+		const payloads = nodes.filter(n => (n.weight || 0) > 0);
+		let status = 'valid';
+		let msg = 'OPTIMAL';
+
+		supports.forEach(support => {
+			const total = payloads.reduce((sum, p) => sum + (p.weight || 0), 0);
+			if (total > support.weightLimit) { status = 'error'; msg = 'OVERLOAD'; }
+			else if (total > support.weightLimit * 0.8) { if (status !== 'error') status = 'warning'; msg = 'STRESS'; }
+		});
+		return { status, msg };
+	};
+
 	const initArchiveUI = () => {
 		const haptic = (ms = 10) => { if ('vibrate' in navigator) navigator.vibrate(ms); };
 		const isUnlocked = document.cookie.includes('ss_alpha_passport=unlocked_2026') || localStorage.getItem('ss_alpha_passport') === 'unlocked_2026';
@@ -206,27 +234,34 @@ const getSignalData = (score: number, status: string) => {
 			});
 		});
 
-		// 3. Variant Switching (Garry Tan Standard: Direct Solve)
+		// 3. Variant Switching
 		document.querySelectorAll('.variant-dot').forEach(dot => {
 			dot.addEventListener('mouseenter', () => {
 				const src = dot.getAttribute('data-src');
 				const img = dot.closest('.visual-viewport').querySelector('.main-node-image') as HTMLImageElement;
 				if (img && src) img.src = src;
-				
 				dot.closest('.variant-nav').querySelectorAll('.variant-dot').forEach(d => d.classList.remove('active'));
 				dot.classList.add('active');
-				haptic(5);
 			});
 		});
 
-		// 4. Stacking Logic (Workbench)
+		// 4. Stacking Logic (Integrated Engine)
 		let activeStack: any[] = JSON.parse(sessionStorage.getItem('ss_active_stack') || '[]');
+		
 		const updateWorkbench = () => {
 			const slots = document.getElementById('workbench-slots');
-			if (!slots) return;
+			const integrityVal = document.getElementById('integrity-val');
+			if (!slots || !integrityVal) return;
+
 			if (activeStack.length === 0) {
 				slots.innerHTML = `<p class="empty-msg">USE [STACK] TO PIN NODES</p>`;
+				integrityVal.textContent = 'IDLE';
+				integrityVal.className = 'report-value';
 			} else {
+				const report = validateStack(activeStack);
+				integrityVal.textContent = report.msg.toUpperCase();
+				integrityVal.className = `report-value status-${report.status}`;
+
 				slots.innerHTML = activeStack.map(n => `
 					<div class="workbench-pill">
 						<img src="${n.image}" alt="" />
@@ -234,6 +269,7 @@ const getSignalData = (score: number, status: string) => {
 						<button class="remove-stack" data-id="${n.id}">&times;</button>
 					</div>
 				`).join('');
+				
 				document.querySelectorAll('.remove-stack').forEach(b => b.addEventListener('click', () => {
 					const id = b.getAttribute('data-id');
 					activeStack = activeStack.filter(item => item.id !== id);
@@ -256,7 +292,7 @@ const getSignalData = (score: number, status: string) => {
 			});
 		});
 
-		// 5. Setup Persistence (Add Button)
+		// 5. Setup Persistence
 		const updateAddBtn = (items: any[]) => {
 			document.querySelectorAll('.add-btn').forEach(btn => {
 				const id = JSON.parse(btn.getAttribute('data-product') || '{}').id;
@@ -278,7 +314,6 @@ const getSignalData = (score: number, status: string) => {
 			});
 		});
 
-		// Unlock Logic
 		if (isUnlocked && !isAdmin) {
 			document.getElementById('unlocked-header')?.style.setProperty('display', 'block');
 			document.getElementById('locked-header')?.style.setProperty('display', 'none');
@@ -300,9 +335,17 @@ const getSignalData = (score: number, status: string) => {
 	.vault-link.active { color: #00ff88; border-bottom-color: #00ff88; }
 	.vault-link:hover { color: #fff; }
 
-	/* WORKBENCH */
+	/* WORKBENCH & INTEGRITY */
 	.stacking-workbench { background: #050505; border: 1px solid #111; padding: 1.5rem; border-radius: 4px; }
-	.lab-label { font-family: var(--family-mono); font-size: 0.45rem; color: #333; letter-spacing: 0.1rem; margin-bottom: 1.5rem; display: block; }
+	.lab-label { font-family: var(--family-mono); font-size: 0.45rem; color: #333; letter-spacing: 0.1rem; margin-bottom: 1rem; display: block; }
+	
+	.integrity-report { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #111; }
+	.report-label { font-size: 0.4rem; color: #222; font-family: var(--family-mono); display: block; margin-bottom: 0.4rem; }
+	.report-value { font-size: 0.5rem; color: #444; font-family: var(--family-mono); font-weight: 900; }
+	.status-valid { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.3); }
+	.status-warning { color: #ffaa00; }
+	.status-error { color: #ff4444; }
+
 	.workbench-slots { display: flex; flex-direction: column; gap: 0.75rem; }
 	.empty-msg { font-size: 0.45rem; color: #222; font-family: var(--family-mono); }
 	.workbench-pill { display: flex; align-items: center; gap: 0.5rem; background: #080808; padding: 0.4rem; border: 1px solid #1a1a1a; border-radius: 2px; }
@@ -326,58 +369,32 @@ const getSignalData = (score: number, status: string) => {
 	.visual-viewport { height: 280px; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
 	img { width: 100%; height: 100%; object-fit: contain; opacity: 0.8; }
 
-	/* VARIANT NAV (GT Standard) */
-	.variant-nav {
-		position: absolute;
-		bottom: 1rem;
-		left: 50%;
-		transform: translateX(-50%);
-		display: flex;
-		gap: 0.5rem;
-		background: rgba(0,0,0,0.6);
-		backdrop-filter: blur(10px);
-		padding: 0.4rem 0.8rem;
-		border-radius: 100px;
-		border: 1px solid rgba(255,255,255,0.05);
-		z-index: 10;
-		opacity: 0;
-		transition: opacity 0.3s ease;
-	}
+	.variant-nav { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.4rem; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 0.3rem 0.6rem; border-radius: 100px; border: 1px solid rgba(255,255,255,0.05); opacity: 0; transition: opacity 0.3s ease; }
 	.visual-viewport:hover .variant-nav { opacity: 1; }
-	.variant-dot {
-		width: 6px;
-		height: 6px;
-		background: #222;
-		border: none;
-		border-radius: 50%;
-		cursor: pointer;
-		padding: 0;
-		transition: all 0.3s ease;
-	}
-	.variant-dot.active { background: #00ff88; box-shadow: 0 0 5px #00ff88; transform: scale(1.2); }
-	.variant-dot:hover { background: #fff; }
+	.variant-dot { width: 4px; height: 4px; background: #222; border: none; border-radius: 50%; cursor: pointer; padding: 0; transition: all 0.3s ease; }
+	.variant-dot.active { background: #00ff88; transform: scale(1.2); }
 
 	.card-meta-container { padding: 2.2rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
 	h3 { font-size: 1.4rem; color: #fff; font-weight: 900; line-height: 1.1; margin: 0.6rem 0; letter-spacing: -0.01rem; }
 	.diagnostic-tag { font-family: var(--family-mono); font-size: 0.55rem; color: #ff4444; font-weight: 900; letter-spacing: 0.15rem; }
 
+	/* SIGNAL BARS */
 	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1a1a1a; padding-top: 1.8rem; }
 	.signal-meter { display: flex; gap: 4px; height: 14px; align-items: flex-end; }
-	.signal-bar { width: 4px; background: #111; border-radius: 1px; transition: all 0.3s ease; }
-	.bar-1 { height: 6px; } .bar-2 { height: 10px; } .bar-3 { height: 14px; }
+	.signal-bar { width: 4px; background: #111; border-radius: 1px; }
 	.signal-bar.active { background: var(--bar-color); box-shadow: 0 0 10px var(--bar-color); }
+	.bar-1 { height: 6px; } .bar-2 { height: 10px; } .bar-3 { height: 14px; }
 	.score-value { font-size: 0.65rem; color: #444; font-family: var(--family-mono); font-weight: 900; }
 
 	/* ACTIONS */
 	.action-group { display: flex; gap: 0.8rem; align-items: center; }
 	.card-action { width: 40px; height: 40px; background: #111; border: 1px solid #222; color: #fff; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
-	.card-action:hover { background: #fff; color: #000; border-color: #fff; transform: translateY(-2px); }
+	.card-action:hover { background: #fff; color: #000; border-color: #fff; }
 	
 	.collapsible-buy { overflow: hidden; display: flex; }
-	.buy-trigger { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem; background: #111; border-radius: 100px; color: #fff; font-size: 0.55rem; font-weight: 900; border: 1px solid #222; text-decoration: none; transition: all 0.3s ease; }
+	.buy-trigger { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem; background: #111; border-radius: 100px; color: #fff; font-size: 0.55rem; font-weight: 900; border: 1px solid #222; text-decoration: none; }
 	.buy-label { width: 0; opacity: 0; transition: all 0.4s ease; overflow: hidden; }
 	.minimal-card:hover .buy-label { width: 35px; opacity: 1; }
-	.buy-trigger:hover { background: #fff; color: #000; }
 
 	.add-btn.added { background: #00ff88; border-color: #00ff88; color: #000; }
 
