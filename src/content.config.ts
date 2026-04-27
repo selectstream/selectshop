@@ -92,6 +92,7 @@ const products = defineCollection({
 					trendScore: finalSignal,
 					priceEstimate: props['Price (Numeric)']?.number ?? 0,
 					image: props['Main Image']?.files?.[0]?.file?.url || props['Main Image']?.files?.[0]?.external?.url || '',
+					gallery: props['Gallery Images']?.files?.map((f: any) => f.file?.url || f.external?.url).filter(Boolean) || [],
 					notes: props['Notes']?.rich_text?.[0]?.plain_text || '',
 				};
 			});
@@ -117,6 +118,7 @@ const products = defineCollection({
 		trendScore: z.number().default(0),
 		priceEstimate: z.number().default(0),
 		image: z.string().optional(),
+		gallery: z.array(z.string()).default([]),
 		notes: z.string().optional(),
 	}),
 });
