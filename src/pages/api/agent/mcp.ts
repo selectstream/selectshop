@@ -14,14 +14,19 @@ export async function GET() {
         node_id: p.data.slug,
         gtin: p.data.gtin || p.id,
         signal_score: p.data.trendScore.toFixed(1),
+        sovereignty_rating: (p.data.interfaceType === 'XLR' || p.data.interfaceType === 'USB-C') ? 10 : 7,
+        empirical_specs: {
+          weight_g: p.data.weight,
+          weight_limit_g: p.data.weightLimit,
+          interface: p.data.interfaceType
+        },
         diagnosis: p.data.painPoint,
-        interface: p.data.interfaceType,
         buy_action: p.data.buyLink
       }));
 
     return new Response(JSON.stringify({
-      protocol: "MCP_v1.0",
-      authority: "SelectStream_Focus_Infrastructure",
+      protocol: "MCP_v1.2_INSTITUTIONAL",
+      authority: "SelectStream_Archive_Sovereignty_Lab",
       status: "SECURE",
       node_count: highSignalNodes.length,
       nodes: highSignalNodes

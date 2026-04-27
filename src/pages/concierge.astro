@@ -1,0 +1,245 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout 
+  title="Concierge | SelectStream Sovereign Lab Architecture"
+  description="High-ticket workspace architecture for elite founders, VCs, and AI orchestrators."
+>
+  <section class="concierge-hero">
+    <div class="hero-vitals">
+      <span>04_SERVICE_NODE</span>
+      <span>AVAILABILITY: 2 SLOTS / MONTH</span>
+    </div>
+    <h1>SOVEREIGN_LAB_CONCIERGE</h1>
+    <p class="hero-sub">We don't build "offices." We architect high-fidelity environments engineered for 12+ hours of deep-work sovereignty. Reserved for elite founders and AI orchestrators.</p>
+  </section>
+
+  <section class="concierge-grid">
+    <div class="service-tier">
+      <div class="tier-header">
+        <span class="tier-id">TIER_01</span>
+        <h2>THE_SOVEREIGN_BLUEPRINT</h2>
+        <span class="price">$15,000</span>
+      </div>
+      <p class="tier-description">A complete architectural audit and digital-physical blueprint for your personal lab.</p>
+      <ul class="feature-list">
+        <li>[+] Full Ergonmic & Cognitive Load Audit</li>
+        <li>[+] Custom QMK/ZMK Firmware Engineering</li>
+        <li>[+] Local-First Network & Storage Architecture</li>
+        <li>[+] 3D Lighting & Acoustic Mapping</li>
+        <li>[+] Curated Procurement of Unreleased Hardware</li>
+      </ul>
+      <button class="inquiry-btn curation-trigger">INITIALIZE_INQUIRY</button>
+    </div>
+
+    <div class="service-tier highlight-tier">
+      <div class="tier-header">
+        <span class="tier-id">TIER_02</span>
+        <h2>TOTAL_ENV_ORCHESTRATION</h2>
+        <span class="price">$25,000+</span>
+      </div>
+      <p class="tier-description">Turn-key execution. We procure, build, and configure your unassailable focus environment.</p>
+      <ul class="feature-list">
+        <li>[+] Every service in Tier 01</li>
+        <li>[+] On-site Installation & Technical Calibration</li>
+        <li>[+] Custom "Matte Black" Hardware Modification</li>
+        <li>[+] 12-Month "Sentry" Hardware Support</li>
+        <li>[+] Private Vault for Family/Team Expansion</li>
+      </ul>
+      <button class="inquiry-btn curation-trigger">COMMISSION_SYSTEM</button>
+    </div>
+  </section>
+
+  <section class="concierge-process">
+    <h2 class="process-label">THE_ARCHITECTURAL_PROTOCOL</h2>
+    <div class="process-steps">
+      <div class="step">
+        <span class="num">01</span>
+        <h3>DIAGNOSIS</h3>
+        <p>We audit your current bottlenecks—from input latency to biometric fatigue.</p>
+      </div>
+      <div class="step">
+        <span class="num">02</span>
+        <h3>FORGE</h3>
+        <p>We design your hybrid hardware/software stack using our proprietary SSE data.</p>
+      </div>
+      <div class="step">
+        <span class="num">03</span>
+        <h3>DEPLOY</h3>
+        <p>We execute the build, ensuring every node is calibrated for uncompromising focus.</p>
+      </div>
+    </div>
+  </section>
+</MainLayout>
+
+<style>
+  .concierge-hero {
+    max-width: 1000px;
+    margin: 8rem auto 10rem auto;
+    text-align: center;
+  }
+
+  .hero-vitals {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-bottom: 2rem;
+    font-family: var(--family-mono);
+    font-size: 0.5rem;
+    color: #444;
+    letter-spacing: 0.2rem;
+  }
+
+  h1 {
+    font-size: 5rem;
+    font-weight: 900;
+    letter-spacing: -0.2rem;
+    color: #fff;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-sub {
+    font-size: 1.2rem;
+    color: #666;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  .concierge-grid {
+    max-width: 1200px;
+    margin: 0 auto 12rem auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    padding: 0 2rem;
+  }
+
+  .service-tier {
+    background: #050505;
+    border: 1px solid #111;
+    padding: 4rem;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.4s ease;
+  }
+
+  .highlight-tier {
+    border-color: #00ff88;
+    box-shadow: 0 0 40px rgba(0,255,136,0.05);
+  }
+
+  .tier-id {
+    font-family: var(--family-mono);
+    font-size: 0.5rem;
+    color: #333;
+    letter-spacing: 0.2rem;
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-size: 1.8rem;
+    color: #fff;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+  }
+
+  .price {
+    font-family: var(--family-mono);
+    font-size: 1.2rem;
+    color: #00ff88;
+    font-weight: 900;
+    display: block;
+    margin-bottom: 2.5rem;
+  }
+
+  .tier-description {
+    font-size: 0.95rem;
+    color: #888;
+    margin-bottom: 3rem;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .feature-list {
+    list-style: none;
+    margin-bottom: 4rem;
+  }
+
+  .feature-list li {
+    font-family: var(--family-mono);
+    font-size: 0.6rem;
+    color: #444;
+    margin-bottom: 1rem;
+    letter-spacing: 0.05rem;
+  }
+
+  .inquiry-btn {
+    width: 100%;
+    padding: 1.2rem;
+    background: #fff;
+    color: #000;
+    border: none;
+    font-family: var(--family-mono);
+    font-size: 0.7rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .inquiry-btn:hover {
+    background: #00ff88;
+    transform: translateY(-2px);
+  }
+
+  .concierge-process {
+    max-width: 1200px;
+    margin: 0 auto 12rem auto;
+    padding: 0 2rem;
+    border-top: 1px solid #111;
+    padding-top: 6rem;
+  }
+
+  .process-label {
+    font-family: var(--family-mono);
+    font-size: 0.5rem;
+    color: #222;
+    letter-spacing: 0.4rem;
+    margin-bottom: 6rem;
+    text-align: center;
+  }
+
+  .process-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6rem;
+  }
+
+  .step .num {
+    font-family: var(--family-mono);
+    font-size: 0.8rem;
+    color: #333;
+    display: block;
+    margin-bottom: 1.5rem;
+  }
+
+  .step h3 {
+    font-size: 1.2rem;
+    color: #fff;
+    font-weight: 900;
+    margin-bottom: 1rem;
+  }
+
+  .step p {
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 1024px) {
+    .concierge-grid, .process-steps { grid-template-columns: 1fr; gap: 4rem; }
+    h1 { font-size: 3.5rem; }
+  }
+</style>
