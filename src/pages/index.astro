@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import MainLayout from '../layouts/MainLayout.astro';
 import LandingHero from '../components/LandingHero.astro';
 import { Client } from '@notionhq/client';
+import { calculateSignal } from '../utils/signal-engine';
 
 const ADMIN_SECRET = process.env.ADMIN_SECRET || import.meta.env.ADMIN_SECRET || 'ss_alpha_2026_distributor';
 const url = new URL(Astro.request.url);
@@ -76,7 +77,6 @@ const getSignalData = (score: number, status: string) => {
 				))}
 			</nav>
 			
-			{/* THE WORKBENCH: Active Compatibility Lab */}
 			<div class="stacking-workbench" id="workbench">
 				<span class="lab-label">SYSTEM_WORKBENCH</span>
 				
@@ -154,12 +154,12 @@ const getSignalData = (score: number, status: string) => {
 										<div class="collapsible-buy">
 											<a href={product.data.buyLink} target="_blank" class="buy-trigger">
 												<span class="buy-label">PRICE</span>
-												<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+												<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1 9L9 1M9 1H3M9 1V7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 											</a>
 										</div>
 
 										<button class="card-action add-btn" data-product={JSON.stringify({id: product.data.id, title: product.data.title})}>
-											<svg width="14" height="14" viewBox="0 0 12 12"><path d="M2 6L5 9L10 3" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+											<svg width="14" height="14" viewBox="0 0 12 12"><path d="M6 1V11M1 6H11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
 										</button>
 									</div>
 								</div>
@@ -358,12 +358,25 @@ const getSignalData = (score: number, status: string) => {
 	.section-label { font-size: 0.6rem; letter-spacing: 0.4rem; color: #222; margin-bottom: 5rem; font-weight: 900; }
 	.nodes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 4rem; perspective: 1500px; }
 
-	/* CARD */
+	/* CARD REFINEMENT */
 	.node-unit { position: relative; min-height: 540px; transform-style: preserve-3d; opacity: 0; animation: reveal 0.8s forwards; }
 	@keyframes reveal { to { opacity: 1; transform: translateY(0); } }
 	.card-flipper { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); transform-style: preserve-3d; }
 	.node-unit.is-flipped .card-flipper { transform: rotateY(180deg); }
-	.card-face { position: absolute; inset: 0; backface-visibility: hidden; background: #080808; border: 1px solid #1a1a1a; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; }
+	
+	.card-face { 
+		position: absolute; 
+		inset: 0; 
+		backface-visibility: hidden; 
+		background: #080808; 
+		border: 1px solid rgba(255,255,255,0.03); 
+		border-radius: 4px; 
+		box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+		display: flex; 
+		flex-direction: column; 
+		overflow: hidden; 
+	}
+	.card-face:hover { border-color: rgba(255,255,255,0.1); box-shadow: 0 40px 80px rgba(0,0,0,0.9); }
 	.card-back { transform: rotateY(180deg); background: #030303 !important; padding: 2.5rem; }
 
 	.visual-viewport { height: 280px; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -375,11 +388,21 @@ const getSignalData = (score: number, status: string) => {
 	.variant-dot.active { background: #00ff88; transform: scale(1.2); }
 
 	.card-meta-container { padding: 2.2rem; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-	h3 { font-size: 1.4rem; color: #fff; font-weight: 900; line-height: 1.1; margin: 0.6rem 0; letter-spacing: -0.01rem; }
+	
+	h3 { 
+		font-family: var(--family-sans); 
+		font-size: 1.4rem; 
+		color: #fff; 
+		font-weight: 800; 
+		line-height: 1.1; 
+		margin: 0.6rem 0; 
+		letter-spacing: -0.01rem; 
+	}
+	
 	.diagnostic-tag { font-family: var(--family-mono); font-size: 0.55rem; color: #ff4444; font-weight: 900; letter-spacing: 0.15rem; }
 
 	/* SIGNAL BARS */
-	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #1a1a1a; padding-top: 1.8rem; }
+	.analytics-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 1.8rem; }
 	.signal-meter { display: flex; gap: 4px; height: 14px; align-items: flex-end; }
 	.signal-bar { width: 4px; background: #111; border-radius: 1px; }
 	.signal-bar.active { background: var(--bar-color); box-shadow: 0 0 10px var(--bar-color); }
