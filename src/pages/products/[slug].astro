@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 }
 
 const { product } = Astro.props;
-const { title, buyLink, category = [], trendScore, image, notes, asin, priceEstimate } = product.data;
+const { title, buyLink, category = [], trendScore, image, notes, asin, priceEstimate, productType } = product.data;
 
 // Split notes into Triple-Threat sections (Assumes: Status. Utility. Trust.)
 const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical excellence.', 'High signal.'];
@@ -30,8 +30,8 @@ const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical exc
     "name": title,
     "image": [image],
     "description": notes,
-    "sku": asin,
-    "mpn": asin,
+    "sku": asin || slug,
+    "mpn": asin || slug,
     "gtin": product.data.gtin || "",
     "brand": {
       "@type": "Brand",
@@ -43,6 +43,11 @@ const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical exc
         "name": "SelectStream Signal",
         "value": trendScore.toFixed(1),
         "description": "A weighted technical score (0-10) based on Material Integrity, Cognitive Efficiency, and Community Momentum."
+      },
+      {
+        "@type": "PropertyValue",
+        "name": "Node Type",
+        "value": productType.toUpperCase()
       }
     ],
     "offers": {
@@ -54,7 +59,7 @@ const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical exc
       "itemCondition": "https://schema.org/NewCondition",
       "seller": {
         "@type": "Organization",
-        "name": "SelectStream Shop"
+        "name": "SelectStream"
       }
     }
   })} />
@@ -62,7 +67,7 @@ const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical exc
   <div class="focus-view">
     <a href="/" class="back-trigger">
       <span class="arrow">←</span>
-      <span class="label">RETURN TO STREAM</span>
+      <span class="label">RETURN TO ARCHIVE</span>
     </a>
 
     <div class="product-stage">
@@ -74,37 +79,54 @@ const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical exc
             class="focus-image" 
             transition:name={`img-${product.data.slug}`}
           />
-        ) : <div class="visual-pending">IMAGE PENDING</div>}
+        ) : <div class="visual-pending">ARCHIVE_IMAGE_PENDING</div>}
       </div>
 
       <div class="content-anchor">
         <div class="header-stack">
-          <span class="category-tag">{category[0]}</span>
+          <span class="category-tag">{category[0]} • NODE_{productType.toUpperCase()}</span>
           <h1>{title}</h1>
         </div>
 
         <div class="summary-grid">
           <div class="summary-item">
-            <span class="item-label">STATUS</span>
+            <span class="item-label">SYSTEM_DIAGNOSIS</span>
             <p>{editorialParts[0]?.trim()}.</p>
           </div>
           <div class="summary-item">
-            <span class="item-label">UTILITY</span>
+            <span class="item-label">ENGINEERING_UTILITY</span>
             <p>{editorialParts[1]?.trim() || 'High-performance utility engineered for deep-work sessions.'}</p>
           </div>
           </div>
         <div class="action-footer">
-          <div class="price-notice">LATEST PRICING & AVAILABILITY</div>
+          <div class="price-notice">{productType === 'digital' ? 'DIRECT_LICENSE_ACQUISITION' : 'LATEST PRICING & AVAILABILITY'}</div>
           <div class="button-row">
-            <a href={buyLink} target="_blank" class="focus-btn buy-now external-handoff">
-              CHECK OFFERS ON AMAZON <span class="legal">(PAID LINK)</span>
-            </a>
+            {productType === 'digital' ? (
+              <button class="focus-btn buy-now digital-checkout" data-slug={product.data.slug}>
+                DOWNLOAD_BLUEPRINT (${priceEstimate.toFixed(2)})
+              </button>
+            ) : (
+              <a href={buyLink} target="_blank" class="focus-btn buy-now external-handoff">
+                CHECK OFFERS ON AMAZON <span class="legal">(PAID LINK)</span>
+              </a>
+            )}
           </div>
         </div>
       </div>
     </div>
   </div>
 </MainLayout>
+
+<script>
+  // Handle Digital Checkout Interaction
+  document.querySelectorAll('.digital-checkout').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Future: Integrate Stripe/Lightning here. For now, simulate handoff.
+      const slug = btn.getAttribute('data-slug');
+      alert(`INITIALIZING SECURE DOWNLOAD FOR: ${slug.toUpperCase()}`);
+    });
+  });
+</script>
 
 <style>
   .focus-view {

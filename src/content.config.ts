@@ -1,5 +1,6 @@
 import { defineCollection, z } from 'astro:content';
 import 'dotenv/config';
+import { calculateSignal } from './utils/signal-engine';
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const DATABASE_ID = process.env.DATABASE_ID;
@@ -68,10 +69,7 @@ const products = defineCollection({
 				const momentum = props['Community Momentum']?.number || 5;
 				const longevity = props['Longevity Score']?.number || 5;
 
-				// 2. Weighted Average Calculation
-				// Formula: (Mat*0.3) + (Cog*0.3) + (Mom*0.2) + (Lon*0.2)
-				const calculatedSignal = (materials * 0.3) + (cognitive * 0.3) + (momentum * 0.2) + (longevity * 0.2);
-				const finalSignal = Math.min(Math.max(calculatedSignal, 0), 10);
+				const finalSignal = calculateSignal(materials, cognitive, momentum, longevity);
 
 				return {
 					id: page.id,
