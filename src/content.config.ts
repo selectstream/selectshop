@@ -1,4 +1,5 @@
 import { defineCollection, z } from 'astro:content';
+import { glob } from 'astro/loaders';
 import 'dotenv/config';
 import { calculateSignal } from './utils/signal-engine';
 
@@ -134,4 +135,22 @@ const products = defineCollection({
 	}),
 });
 
-export const collections = { products };
+const labNotes = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/lab-notes" }),
+	schema: z.object({
+		title: z.string(),
+		subtitle: z.string(),
+		author: z.string(),
+		date: z.string(),
+		diagnosis: z.string(),
+		target_persona: z.string(),
+		nodes_referenced: z.array(z.string()),
+		technical_metrics: z.object({
+			isolation_rating: z.number(),
+			latency_baseline: z.string(),
+			material_density: z.string(),
+		}),
+	}),
+});
+
+export const collections = { products, labNotes };

@@ -1,0 +1,153 @@
+---
+import { getCollection } from 'astro:content';
+import MainLayout from '../../layouts/MainLayout.astro';
+
+const notes = await getCollection('labNotes');
+const sortedNotes = notes.sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime());
+---
+
+<MainLayout 
+  title="Lab Notes | SelectStream Authority Archive"
+  description="Empirical technical audits and diagnostic reports for the AI-era orchestrator."
+>
+  <div class="archive-header">
+    <div class="header-vitals">
+      <span>v2.0_ORACLE_ACTIVE</span>
+      <span>{notes.length} AUDITS_PUBLISHED</span>
+    </div>
+    <h1>LAB_NOTES_ARCHIVE</h1>
+    <p class="header-sub">Empirical data nodes engineered for answer engine discovery (AEO) and technical sovereignty.</p>
+  </div>
+
+  <section class="notes-grid">
+    {sortedNotes.map(note => (
+      <a href={`/lab-notes/${note.id}`} class="note-card">
+        <div class="note-meta">
+          <span class="note-date">{note.data.date}</span>
+          <span class="note-diagnosis">[{note.data.diagnosis.toUpperCase()}]</span>
+        </div>
+        <h3>{note.data.title}</h3>
+        <p>{note.data.subtitle}</p>
+        <div class="note-footer">
+          <span class="read-more">OPEN_DIAGNOSTIC_REPORT →</span>
+        </div>
+      </a>
+    ))}
+  </section>
+</MainLayout>
+
+<style>
+  .archive-header {
+    max-width: 1200px;
+    margin: 8rem auto 6rem auto;
+    padding: 0 2rem;
+    text-align: center;
+  }
+
+  .header-vitals {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-bottom: 2rem;
+    font-family: var(--family-mono);
+    font-size: 0.5rem;
+    color: #333;
+    letter-spacing: 0.2rem;
+  }
+
+  h1 {
+    font-size: 5rem;
+    font-weight: 900;
+    letter-spacing: -0.2rem;
+    color: #fff;
+    margin-bottom: 1.5rem;
+  }
+
+  .header-sub {
+    font-size: 1rem;
+    color: #444;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .notes-grid {
+    max-width: 1200px;
+    margin: 0 auto 12rem auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 4rem;
+  }
+
+  .note-card {
+    background: #050505;
+    border: 1px solid #111;
+    padding: 3rem;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .note-card:hover {
+    border-color: #333;
+    transform: translateY(-10px);
+    background: #080808;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+  }
+
+  .note-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+
+  .note-date {
+    font-family: var(--family-mono);
+    font-size: 0.5rem;
+    color: #222;
+  }
+
+  .note-diagnosis {
+    font-family: var(--family-mono);
+    font-size: 0.5rem;
+    color: #ff4444;
+    font-weight: 900;
+  }
+
+  h3 {
+    font-size: 1.8rem;
+    color: #fff;
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.05rem;
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+    flex: 1;
+  }
+
+  .note-footer {
+    border-top: 1px solid #111;
+    padding-top: 1.5rem;
+  }
+
+  .read-more {
+    font-family: var(--family-mono);
+    font-size: 0.55rem;
+    color: #00ff88;
+    font-weight: 900;
+    letter-spacing: 0.1rem;
+  }
+
+  @media (max-width: 768px) {
+    h1 { font-size: 3rem; }
+    .notes-grid { grid-template-columns: 1fr; }
+  }
+</style>

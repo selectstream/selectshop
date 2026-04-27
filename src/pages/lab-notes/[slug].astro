@@ -1,0 +1,222 @@
+---
+import { getCollection, render } from 'astro:content';
+import MainLayout from '../../layouts/MainLayout.astro';
+
+export async function getStaticPaths() {
+  const notes = await getCollection('labNotes');
+  return notes.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, subtitle, author, date, diagnosis, target_persona, technical_metrics } = entry.data;
+---
+
+<MainLayout 
+  title={`${title} | SelectStream Lab Notes`}
+  description={subtitle}
+>
+  {/* AEO: STRUCTURED DATA FOR ANSWER ENGINES */}
+  <script type="application/ld+json" is:inline set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": title,
+    "description": subtitle,
+    "author": {
+      "@type": "Organization",
+      "name": "SelectStream Systems Lab"
+    },
+    "datePublished": date,
+    "proficiencyLevel": "Expert",
+    "articleSection": diagnosis,
+    "about": {
+      "@type": "Thing",
+      "name": diagnosis
+    }
+  })} />
+
+  <article class="lab-note-view">
+    <header class="note-header">
+      <div class="header-metadata">
+        <span class="met-tag">ID: {entry.id.toUpperCase()}</span>
+        <span class="met-tag">AUTHOR_NODE: {author.toUpperCase()}</span>
+        <span class="met-tag">DATE: {date}</span>
+      </div>
+      <h1>{title}</h1>
+      <p class="subtitle">{subtitle}</p>
+    </header>
+
+    <div class="note-grid">
+      <aside class="technical-specs">
+        <div class="spec-card">
+          <span class="card-label">DIAGNOSTIC_SUMMARY</span>
+          <div class="spec-item">
+            <span class="label">PRIMARY_DIAGNOSIS</span>
+            <span class="val">{diagnosis}</span>
+          </div>
+          <div class="spec-item">
+            <span class="label">TARGET_PERSONA</span>
+            <span class="val">{target_persona}</span>
+          </div>
+          <div class="spec-item">
+            <span class="label">ISOLATION_RATING</span>
+            <span class="val">{technical_metrics.isolation_rating}/10</span>
+          </div>
+          <div class="spec-item">
+            <span class="label">LATENCY_BASELINE</span>
+            <span class="val">{technical_metrics.latency_baseline}</span>
+          </div>
+          <div class="spec-item">
+            <span class="label">MATERIALITY</span>
+            <span class="val">{technical_metrics.material_density}</span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="note-content">
+        <Content />
+      </div>
+    </div>
+
+    <footer class="note-footer">
+      <a href="/" class="back-link">RETURN_TO_ARCHIVE</a>
+    </footer>
+  </article>
+</MainLayout>
+
+<style>
+  .lab-note-view {
+    max-width: 1200px;
+    margin: 8rem auto;
+    padding: 0 2rem;
+  }
+
+  .header-metadata {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .met-tag {
+    font-family: var(--family-mono);
+    font-size: 0.5rem;
+    color: #444;
+    letter-spacing: 0.2rem;
+  }
+
+  h1 {
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 0.9;
+    letter-spacing: -0.2rem;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    text-transform: uppercase;
+  }
+
+  .subtitle {
+    font-size: 1.2rem;
+    color: #666;
+    max-width: 700px;
+    line-height: 1.5;
+  }
+
+  .note-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 6rem;
+    margin-top: 6rem;
+    align-items: flex-start;
+  }
+
+  .spec-card {
+    background: #050505;
+    border: 1px solid #111;
+    padding: 2rem;
+    position: sticky;
+    top: 10rem;
+  }
+
+  .card-label {
+    font-family: var(--family-mono);
+    font-size: 0.45rem;
+    color: #222;
+    letter-spacing: 0.3rem;
+    display: block;
+    margin-bottom: 2rem;
+  }
+
+  .spec-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid #111;
+  }
+
+  .spec-item .label {
+    display: block;
+    font-size: 0.4rem;
+    color: #333;
+    font-family: var(--family-mono);
+    margin-bottom: 0.5rem;
+  }
+
+  .spec-item .val {
+    font-size: 0.6rem;
+    color: #00ff88;
+    font-family: var(--family-mono);
+    font-weight: 900;
+  }
+
+  .note-content {
+    font-size: 1.1rem;
+    color: #999;
+    line-height: 1.8;
+  }
+
+  .note-content :global(h2) {
+    font-size: 1.5rem;
+    color: #fff;
+    margin: 4rem 0 1.5rem 0;
+    font-weight: 900;
+    letter-spacing: 0.2rem;
+  }
+
+  .note-content :global(h3) {
+    font-size: 1.1rem;
+    color: #fff;
+    margin: 2.5rem 0 1rem 0;
+    font-weight: 800;
+  }
+
+  .note-content :global(p) {
+    margin-bottom: 2rem;
+  }
+
+  .note-content :global(strong) {
+    color: #fff;
+  }
+
+  .note-footer {
+    margin-top: 8rem;
+    padding-top: 4rem;
+    border-top: 1px solid #111;
+  }
+
+  .back-link {
+    font-family: var(--family-mono);
+    font-size: 0.6rem;
+    color: #444;
+    text-decoration: none;
+    letter-spacing: 0.2rem;
+    font-weight: 900;
+  }
+
+  .back-link:hover { color: #fff; }
+
+  @media (max-width: 1024px) {
+    .note-grid { grid-template-columns: 1fr; gap: 4rem; }
+    h1 { font-size: 3rem; }
+  }
+</style>
