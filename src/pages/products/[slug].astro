@@ -121,9 +121,15 @@ const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical exc
   // Handle Digital Checkout Interaction
   document.querySelectorAll('.digital-checkout').forEach(btn => {
     btn.addEventListener('click', () => {
-      // Future: Integrate Stripe/Lightning here. For now, simulate handoff.
-      const slug = btn.getAttribute('data-slug');
-      alert(`INITIALIZING SECURE DOWNLOAD FOR: ${slug.toUpperCase()}`);
+      const productData = {
+        title: btn.closest('.content-anchor').querySelector('h1').innerText,
+        price: parseFloat(btn.innerText.match(/\d+\.\d+/)[0]),
+        image: document.querySelector('.focus-image').src
+      };
+
+      window.dispatchEvent(new CustomEvent('trigger-merchant-checkout', { 
+        detail: productData 
+      }));
     });
   });
 </script>
