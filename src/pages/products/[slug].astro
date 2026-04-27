@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 }
 
 const { product } = Astro.props;
-const { title, buyLink, category = [], trendScore, image, notes, asin, priceEstimate, productType } = product.data;
+const { title, slug, buyLink, category = [], trendScore, image, notes, asin, priceEstimate, productType } = product.data;
 
 // Split notes into Triple-Threat sections (Assumes: Status. Utility. Trust.)
 const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical excellence.', 'High signal.'];
