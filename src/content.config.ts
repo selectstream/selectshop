@@ -136,7 +136,7 @@ const products = defineCollection({
 });
 
 const labNotes = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./src/content/lab-notes" }),
+	loader: glob({ pattern: "**/*.md", base: "./src/content/system-audits" }),
 	schema: z.object({
 		title: z.string(),
 		subtitle: z.string(),
