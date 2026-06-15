@@ -72,7 +72,10 @@ const { title, description = "Curated High-Performance Creator Tools | THE MATTE
 			</div>
 
 			<footer>
-				<p>&copy; 2026 SelectStream Shop | THE MATTE BLACK STANDARD</p>
+				<div class="footer-content">
+					<p class="copyright">&copy; 2026 SelectStream Shop | THE MATTE BLACK STANDARD</p>
+					<p class="disclosure">FTC DISCLOSURE: As an Amazon Associate, SelectStream earns commission from qualifying purchases. Outbound referral links on the stream generate yield.</p>
+				</div>
 			</footer>
 		</div>
 
@@ -249,18 +252,36 @@ const { title, description = "Curated High-Performance Creator Tools | THE MATTE
 	}
 
 	footer {
-		height: 10rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		padding: 4rem 2rem;
 		border-top: 1px solid rgba(255,255,255,0.05);
+		background: #010101;
 	}
 
-	footer p {
+	.footer-content {
+		max-width: 1200px;
+		margin: 0 auto;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.5rem;
+		text-align: center;
+	}
+
+	.copyright {
 		font-size: 0.6rem;
 		letter-spacing: 0.3rem;
-		color: #222;
+		color: #444;
 		font-weight: 900;
+		text-transform: uppercase;
+	}
+
+	.disclosure {
+		font-family: var(--family-mono);
+		font-size: 0.5rem;
+		color: #222;
+		line-height: 1.6;
+		max-width: 650px;
+		letter-spacing: 0.05rem;
 	}
 
 	.grain-overlay {

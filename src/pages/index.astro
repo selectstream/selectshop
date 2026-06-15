@@ -103,9 +103,9 @@ const getSignalData = (score: number, status: string) => {
 				const signal = getSignalData(product.data.trendScore, product.data.status);
 				return (
 				<div 
-					class={`node-unit ${index >= 6 ? 'locked-node' : 'rarity-node'}`}
+					class={`node-unit ${index >= 6 ? 'locked-node' : 'rarity-node'} ${(index >= 6 && !isAdmin && !isUnlocked) ? 'locked-preview' : ''}`}
 					data-category={product.data.category?.[0] || 'ESSENTIAL'}
-					style={`animation-delay: ${index * 0.05}s; ${(index >= 6 && !isAdmin && !isUnlocked) ? 'display: none' : 'display: block'}`}
+					style={`animation-delay: ${index * 0.05}s; display: block;`}
 					key={product.data.id}
 				>
 					<div class="card-flipper">
@@ -326,10 +326,20 @@ const getSignalData = (score: number, status: string) => {
 			});
 		});
 
+		// Handle Locked Preview Interaction
+		document.querySelectorAll('.locked-preview').forEach(node => {
+			node.addEventListener('click', (e) => {
+				e.preventDefault(); e.stopPropagation(); haptic(15);
+				window.dispatchEvent(new CustomEvent('trigger-alpha-gate'));
+			});
+		});
+
 		if (isUnlocked && !isAdmin) {
 			document.getElementById('unlocked-header')?.style.setProperty('display', 'block');
 			document.getElementById('locked-header')?.style.setProperty('display', 'none');
-			document.querySelectorAll('.locked-node').forEach(n => { (n as HTMLElement).style.display = 'block'; });
+			document.querySelectorAll('.locked-preview').forEach(n => {
+				n.classList.remove('locked-preview');
+			});
 		}
 	};
 	initArchiveUI();
@@ -450,4 +460,20 @@ const getSignalData = (score: number, status: string) => {
 	.vital-item .label { font-size: 0.45rem; color: #333; letter-spacing: 0.15rem; }
 	.vital-item .value { font-family: var(--family-mono); font-size: 0.8rem; color: #fff; }
 	h1 { font-size: 4.5rem; letter-spacing: -0.2rem; color: #fff; font-weight: 900; }
+
+	/* LOCKED NODE PREVIEW BLUR */
+	.locked-preview {
+		cursor: pointer !important;
+	}
+	.locked-preview .card-flipper {
+		filter: blur(8px) grayscale(1);
+		opacity: 0.2;
+		pointer-events: none; /* Let clicks pass to the container node-unit */
+		user-select: none;
+		transition: all 0.3s ease;
+	}
+	.locked-preview:hover .card-flipper {
+		opacity: 0.35;
+		filter: blur(6px) grayscale(0.5);
+	}
 </style>
