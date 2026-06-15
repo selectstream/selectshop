@@ -18,6 +18,22 @@ import MainLayout from '../layouts/MainLayout.astro';
   <section class="concierge-grid">
     <div class="service-tier">
       <div class="tier-header">
+        <span class="tier-id">TIER_00</span>
+        <h2>THE_SOVEREIGN_AUDIT</h2>
+        <span class="price">$149</span>
+      </div>
+      <p class="tier-description">A fast, low-friction digital audit of your workstation. Submit 3 workspace photos for 3 key focus layout changes.</p>
+      <ul class="feature-list">
+        <li>[+] Room & Desk Photo Evaluation</li>
+        <li>[+] Input Latency & Cognitive Load Review</li>
+        <li>[+] Custom Layout Recommendation</li>
+        <li>[+] Personalized Curation Shopping List</li>
+      </ul>
+      <button class="inquiry-btn audit-checkout" data-price="149" data-title="THE_SOVEREIGN_AUDIT">INITIALIZE_AUDIT</button>
+    </div>
+
+    <div class="service-tier">
+      <div class="tier-header">
         <span class="tier-id">TIER_01</span>
         <h2>THE_SOVEREIGN_BLUEPRINT</h2>
         <span class="price">$15,000</span>
@@ -50,6 +66,23 @@ import MainLayout from '../layouts/MainLayout.astro';
       <button class="inquiry-btn curation-trigger">COMMISSION_SYSTEM</button>
     </div>
   </section>
+
+  <script>
+    // Handle Audit Checkout Interaction
+    document.querySelectorAll('.audit-checkout').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const productData = {
+          title: btn.getAttribute('data-title') || 'Workspace Audit',
+          price: parseFloat(btn.getAttribute('data-price') || '149'),
+          image: 'https://grainy-gradients.vercel.app/noise.svg' // Fallback preview
+        };
+
+        window.dispatchEvent(new CustomEvent('trigger-merchant-checkout', { 
+          detail: productData 
+        }));
+      });
+    });
+  </script>
 
   <section class="concierge-process">
     <h2 class="process-label">THE_ARCHITECTURAL_PROTOCOL</h2>
@@ -111,7 +144,7 @@ import MainLayout from '../layouts/MainLayout.astro';
     max-width: 1200px;
     margin: 0 auto 12rem auto;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 4rem;
     padding: 0 2rem;
   }

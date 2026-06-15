@@ -5,13 +5,14 @@ dist/
 .vercel/
 .netlify/
 .gemini/
-GEMINI.md
+.agents/
+AGENTS.md
 test-notion.js
 uploader.sh
 public/assets/stream/logs.json
 DESIGN.md
 .env.local
 MILESTONES.md
-GEMINI.md
+AGENTS.md
 scripts/test-identity.js
 scripts/ensure-notion-integrity.js

@@ -102,7 +102,7 @@ const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical exc
           <div class="price-notice">{productType === 'digital' ? 'DIRECT_LICENSE_ACQUISITION' : 'LATEST PRICING & AVAILABILITY'}</div>
           <div class="button-row">
             {productType === 'digital' ? (
-              <button class="focus-btn buy-now digital-checkout" data-slug={product.data.slug}>
+              <button class="focus-btn buy-now digital-checkout" data-slug={product.data.slug} data-price={priceEstimate}>
                 DOWNLOAD_BLUEPRINT (${priceEstimate.toFixed(2)})
               </button>
             ) : (
@@ -123,8 +123,8 @@ const editorialParts = notes?.split('.') || ['Curation Pending.', 'Technical exc
     btn.addEventListener('click', () => {
       const productData = {
         title: btn.closest('.content-anchor').querySelector('h1').innerText,
-        price: parseFloat(btn.innerText.match(/\d+\.\d+/)[0]),
-        image: document.querySelector('.focus-image').src
+        price: parseFloat(btn.getAttribute('data-price') || '0'),
+        image: document.querySelector('.focus-image')?.getAttribute('src') || ''
       };
 
       window.dispatchEvent(new CustomEvent('trigger-merchant-checkout', { 

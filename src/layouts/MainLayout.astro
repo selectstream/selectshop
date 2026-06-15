@@ -106,6 +106,50 @@ const { title, description = "Curated High-Performance Creator Tools | THE MATTE
 				document.getElementById('checkout-portal').style.display = 'none';
 				document.body.style.overflow = '';
 			});
+
+			document.getElementById('initiate-payment')?.addEventListener('click', async () => {
+				const emailInput = document.getElementById('checkout-email');
+				const email = emailInput?.value?.trim();
+				const title = document.getElementById('checkout-title')?.textContent;
+				const priceText = document.getElementById('checkout-price')?.textContent || '$0.00';
+				const price = parseFloat(priceText.replace('$', ''));
+				const payBtn = document.getElementById('initiate-payment');
+
+				if (!email || !email.includes('@')) {
+					alert('LICENSING ERROR: A VALID EMAIL ADDRESS IS REQUIRED.');
+					if (emailInput) emailInput.focus();
+					return;
+				}
+
+				if (payBtn) {
+					payBtn.disabled = true;
+					payBtn.textContent = 'INITIALIZING...';
+				}
+
+				try {
+					const response = await fetch('/api/subscription/create', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ email, planId: title ? title.toLowerCase().replace(/\s+/g, '_') : 'digital_license' })
+					});
+
+					const data = await response.json();
+					if (response.ok && data.handshake_url) {
+						if (payBtn) payBtn.textContent = 'REDIRECTING TO CHECKOUT...';
+						setTimeout(() => {
+							window.location.href = data.handshake_url;
+						}, 800);
+					} else {
+						throw new Error(data.error || 'GATEWAY CONNECTION ERROR');
+					}
+				} catch (err) {
+					alert(`TRANSACTION_FAILED: ${err.message}`);
+					if (payBtn) {
+						payBtn.disabled = false;
+						payBtn.textContent = 'INITIALIZE_TRANSACTION';
+					}
+				}
+			});
 		</script>
 	</body>
 
