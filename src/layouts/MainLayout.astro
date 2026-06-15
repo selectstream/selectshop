@@ -15,6 +15,10 @@ const { title, description = "Curated High-Performance Creator Tools | THE MATTE
 		<title>{title}</title>
 		<meta name="description" content={description} />
 		
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 		<ClientRouter />
 	</head>
 	<body>
@@ -160,8 +164,8 @@ const { title, description = "Curated High-Performance Creator Tools | THE MATTE
 	:root {
 		--bg-color: #030303;
 		--text-color: #a0a0a0;
-		--family-sans: 'Geist', 'Inter', system-ui, sans-serif;
-		--family-mono: 'Geist Mono', monospace;
+		--family-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+		--family-mono: 'JetBrains Mono', monospace;
 	}
 
 	#cursor {
